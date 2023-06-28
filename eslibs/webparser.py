@@ -60,15 +60,7 @@ class TelegramParser:
         if tag != None:
            html = tag.decode_contents(formatter="html")
            text = html2text.html2text(html)
-           #text = text.replace('_**', '_')
-           #text = text.replace('**_', '_')
-           text = text.replace('**', '*')
-           text = text.replace('_*', '')
-           text = text.replace('*_', '')
-           text = text.replace('_ *', '')
-           text = text.replace('* _', '')
-           text = text.replace('_', '')
-           return text.strip()
+           return prepare_markdown(text)
         return None
 
 
@@ -80,3 +72,15 @@ class TelegramParser:
               result.append(i)
 
        return result
+    
+def prepare_markdown(text):
+    #text = text.replace('_**', '_')
+    #text = text.replace('**_', '_')
+    text = text.replace('__', '_')
+    text = text.replace('**', '*')
+    text = text.replace('_*', '')
+    text = text.replace('*_', '')
+    text = text.replace('_ *', '')
+    text = text.replace('* _', '')
+    text = text.replace('_', '')
+    return text.strip()
