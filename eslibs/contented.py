@@ -24,17 +24,17 @@ def prepare_information1_post(source):
     chatLink = generate_link(source["location"])
     chatName = source["location"]["first_name"]
     chatName = re.sub(r'\[|\]', '', chatName)
-    text = "[%s](%s)  " % (chatName, chatLink)
+    text = "[%s](%s)\n" % (chatName, chatLink)
 
     if source['sender']['id'] != source["location"]['id']:
         senderLink = generate_link(source["sender"])
         senderName = source["sender"]["first_name"]+" "+source["sender"]["last_name"] 
         senderName = re.sub(r'\[|\]', '', senderName)
-        text += f"[%s](%s)    " % (senderName, senderLink)
+        text += f"[%s](%s)\n\n" % (senderName, senderLink)
     else:
-        text += "    "
+        text += "\n\n"
 
-    text += "[Сообщение](%s):  " % source["content"]["link"]
+    text += "[Сообщение](%s):\n" % source["content"]["link"]
     text +=  re.sub(r'\*|_|`|~', '', msg)
     
     post = source["content"]
@@ -55,19 +55,19 @@ def prepare_information2_post(source):
     chatLink = generate_link(source["location"])
     chatName = source["location"]["first_name"]
     chatName = re.sub(r'\[|\]', '', chatName)
-    text = "[%s](%s)  " % (chatName, chatLink)
+    text = "[%s](%s)\n" % (chatName, chatLink)
 
     if source['sender']['id'] != source["location"]['id']:
         senderLink = generate_link(source["sender"])
         senderName = source["sender"]["first_name"]+" "+source["sender"]["last_name"] 
         senderName = re.sub(r'\[|\]', '', senderName)
-        text += f"[%s](%s)    " % (senderName, senderLink)
+        text += f"[%s](%s)\n\n" % (senderName, senderLink)
     else:
-        text += "    "
+        text += "\n\n"
 
     postLink = "[ссылка на пост](%s)" % source["content"]["link"]
     text +=  re.sub(r'\*|_|`|~', '', msg)
-    text += "    %s" % postLink
+    text += "\n\n%s" % postLink
     post = source["content"]
     post["type"] = "text"
     post["text"] = text
@@ -86,15 +86,15 @@ def prepare_information3_post(source):
 #    postLink = "[ссылка на пост](%s)" % source["content"]["link"]
     chatName = source["location"]["first_name"]
     chatName = re.sub(r'\[|\]', '', chatName)
-    text = "[%s](%s)  " % (chatName, source["content"]["link"])
+    text = "[%s](%s)\n" % (chatName, source["content"]["link"])
     #print("TEXT", text)
     if source['sender']['id'] != source["location"]['id']:
         senderLink = generate_link(source["sender"])
         senderName = source["sender"]["first_name"]+" "+source["sender"]["last_name"] 
         senderName = re.sub(r'\[|\]', '', senderName)
-        text += f"[%s](%s)    " % (senderName, senderLink)
+        text += f"[%s](%s)\n\n" % (senderName, senderLink)
     else:
-        text += "    "
+        text += "\n\n"
 
     text +=  re.sub(r'\*|_|`|~', '', msg)
 
@@ -155,7 +155,7 @@ def prepare_forward2_post(source):
     if 'text' not in post or not post['text']:
         post['text'] = parser.get_text()
 
-    post['text'] = "  %s    %s" % (postLink, post['text'])
+    post['text'] = "\n%s\n\n%s" % (postLink, post['text'])
     return post
 
 
