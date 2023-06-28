@@ -12,6 +12,7 @@ def generate_link(destination):
                 return "https://t.me/%s" % destination["username"]
             return "https://t.me/c/%d" % destination["id"] 
 
+# название чата:имя отправителя:ссылка на сообщение:текст сообщения
 def prepare_information1_post(source):
     if source["content"] == None:
         return None
@@ -23,17 +24,17 @@ def prepare_information1_post(source):
     chatLink = generate_link(source["location"])
     chatName = source["location"]["first_name"]
     chatName = re.sub(r'\[|\]', '', chatName)
-    text = "[%s](%s)\n" % (chatName, chatLink)
+    text = "[%s](%s)<br>" % (chatName, chatLink)
 
     if source['sender']['id'] != source["location"]['id']:
         senderLink = generate_link(source["sender"])
         senderName = source["sender"]["first_name"]+" "+source["sender"]["last_name"] 
         senderName = re.sub(r'\[|\]', '', senderName)
-        text += f"[%s](%s)\n\n" % (senderName, senderLink)
+        text += f"[%s](%s)<br><br>" % (senderName, senderLink)
     else:
-        text += "\n\n"
+        text += "<br><br>"
 
-    text += "[Сообщение](%s):\n" % source["content"]["link"]
+    text += "[Сообщение](%s):<br>" % source["content"]["link"]
     text +=  re.sub(r'\*|_|`|~', '', msg)
     
     post = source["content"]
@@ -42,7 +43,71 @@ def prepare_information1_post(source):
     return post
 
 
+# название чата:имя отправителя:текст сообщения:ссылка на сообщение
+def prepare_information2_post(source):
+    if source["content"] == None:
+        return None
+    
+    msg = source["content"].get("text")
+    if msg == None:
+        return None
+    
+    chatLink = generate_link(source["location"])
+    chatName = source["location"]["first_name"]
+    chatName = re.sub(r'\[|\]', '', chatName)
+    text = "[%s](%s)<br>" % (chatName, chatLink)
+
+    if source['sender']['id'] != source["location"]['id']:
+        senderLink = generate_link(source["sender"])
+        senderName = source["sender"]["first_name"]+" "+source["sender"]["last_name"] 
+        senderName = re.sub(r'\[|\]', '', senderName)
+        text += f"[%s](%s)<br><br>" % (senderName, senderLink)
+    else:
+        text += "<br><br>"
+
+    postLink = "[ссылка на пост](%s)" % source["content"]["link"]
+    text +=  re.sub(r'\*|_|`|~', '', msg)
+    text += "<br><br>%s" % postLink
+    post = source["content"]
+    post["type"] = "text"
+    post["text"] = text
+    return post
+
+# ссылка на сообщение:имя отправителя:текст сообщения
+def prepare_information3_post(source):
+    if source["content"] == None:
+        return None
+
+    msg = source["content"].get("text")
+    if msg == None:
+        return None
+
+#    chatLink = generate_link(source["location"])
+#    postLink = "[ссылка на пост](%s)" % source["content"]["link"]
+    chatName = source["location"]["first_name"]
+    chatName = re.sub(r'\[|\]', '', chatName)
+    text = "[%s](%s)<br>" % (chatName, source["content"]["link"])
+    #print("TEXT", text)
+    if source['sender']['id'] != source["location"]['id']:
+        senderLink = generate_link(source["sender"])
+        senderName = source["sender"]["first_name"]+" "+source["sender"]["last_name"] 
+        senderName = re.sub(r'\[|\]', '', senderName)
+        text += f"[%s](%s)<br><br>" % (senderName, senderLink)
+    else:
+        text += "<br><br>"
+
+    text +=  re.sub(r'\*|_|`|~', '', msg)
+
+    post = source["content"]
+    post["type"] = "text"
+    post["text"] = text
+    return post
+
+
 def prepare_forward_post(source):
+    if source["content"] == None:
+        print("None content")
+        return None
     post = source["content"]
     parser = webparser.TelegramParser(post['link'])
     # print("PARSER", parser.soup)
@@ -65,6 +130,32 @@ def prepare_forward_post(source):
         #if text != None:
         #    post["text"] = text
 
+    return post
+
+
+def prepare_forward2_post(source):
+    if source["content"] == None:
+        print("None content")
+        return None
+
+    post = source["content"]
+    postLink = "[%s](%s)" % (source["location"]["first_name"], source["content"]["link"])
+    parser = webparser.TelegramParser(post['link'])
+    # print("PARSER", parser.soup)
+    # return None
+    if post['type'] == 'videonote':
+        post['video_link'] = parser.get_videonote()
+        return post
+    # FULL POST
+    post["foto_link"] = parser.get_img_links()
+    post["video_link"] = parser.get_video_links()
+
+    #print("PPPPPPPPP", post)
+    #if post['text'] == '':
+    if 'text' not in post or not post['text']:
+        post['text'] = parser.get_text()
+
+    post['text'] = "<br>%s<br><br>%s" % (postLink, post['text'])
     return post
 
 

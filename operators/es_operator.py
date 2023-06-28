@@ -49,8 +49,15 @@ class ESCollector(BaseOperator):
            
             if post_type == 'information_1':
                 post = Contented.prepare_information1_post(msg["_source"])
+            elif post_type == 'information_2':
+                post = Contented.prepare_information2_post(msg["_source"])
+            elif post_type == 'information_3':
+                post = Contented.prepare_information3_post(msg["_source"])
+            elif post_type == 'forward_2':
+                post = Contented.prepare_forward2_post(msg["_source"])
             else:
                 post = Contented.prepare_forward_post(msg["_source"])
+
             
             # Если post_type == 'information_1' и при этом текст отсутствует тогда post == None
             if post == None:
@@ -90,7 +97,6 @@ class ESCollector(BaseOperator):
     # Загружаем поисковый запрос пользователя
     @task.python
     def get_project(server, index, name):
-      print("GET PROJECT")
       es = ESCollector.ESNew(server)
       query = {
           "query": {
