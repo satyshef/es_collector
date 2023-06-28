@@ -82,5 +82,5 @@ def prepare_markdown(text):
     text = text.replace('*_', '')
     text = text.replace('_ *', '')
     text = text.replace('* _', '')
-    text = text.replace('_', '')
+    #text = text.replace('_', '')
     return text.strip()
