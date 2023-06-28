@@ -90,6 +90,7 @@ class ESCollector(BaseOperator):
     # Загружаем поисковый запрос пользователя
     @task.python
     def get_project(server, index, name):
+      print("GET PROJECT")
       es = ESCollector.ESNew(server)
       query = {
           "query": {
