@@ -3,7 +3,7 @@ import requests
 
 class TelegramWorker:
     def __init__(self, bot_token) -> None:
-        self.bot =  telebot.TeleBot(bot_token, parse_mode='markdown')
+        self.bot =  telebot.TeleBot(bot_token, parse_mode='Markdown')
 
     def send_text(self, chat_id, text):
        return self.bot.send_message(chat_id, text, disable_web_page_preview=True)
@@ -41,7 +41,7 @@ class TelegramWorker:
        if len(media) == 0:
            if caption != None:
                print("Send text instead of media")
-               return self.bot.send_text(chat_id, caption)
+               return self.send_text(chat_id, caption)
            else:
                raise ValueError('Media is empty')
        return self.bot.send_media_group(chat_id, media)
