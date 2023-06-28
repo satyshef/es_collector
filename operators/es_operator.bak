@@ -1,0 +1,323 @@
+import requests
+import time
+import html2text
+import telegram
+import re
+
+from airflow.models.baseoperator import BaseOperator
+from airflow.utils.decorators import apply_defaults
+from airflow.decorators import task
+from airflow import models
+
+from elasticsearch import Elasticsearch
+from bs4 import BeautifulSoup
+import telebot
+#import telegram
+#from telegram import InputMediaPhoto, InputMediaVideo
+
+class ESCollector(BaseOperator):
+    #server = ['server']
+
+    @apply_defaults
+    def __init__(self, host, port, *args, **kwargs):
+        self.host = host
+        self.port = port
+        super().__init__(*args, **kwargs)
+
+    def execute(self, context):
+        return
+
+
+    @task.python
+    def send_messages(server, filter, filter_index, messages, project, interval=1, post_type='forward'):
+        bot_token = project["bot_token"]
+        chat_id = project["chat_id"]
+        #bot = telegram.Bot(token = bot_token)
+        bot =  telebot.TeleBot(bot_token)
+
+        for msg in messages:
+            ESCollector.set_last_msg(server, filter_index, project["filter_name"], msg["_source"]["time"])
+            if post_type == 'information_1':
+                post = ESCollector.prepare_information_post(msg["_source"])
+            else:
+                post = ESCollector.prepare_forward_post(msg["_source"])
+            print("POST", post)
+            for cid in chat_id:
+                if post == None:
+                    continue
+                
+                if post['type']=='videonote':
+                    print("SEND VIDEONOTE", post)
+                    response = ESCollector.send_videonote(bot, cid, post)
+                elif post['type']=='text':
+                    print("SEND TEXT", post, " TO CHAT ", cid)
+                    response = ESCollector.send_text_post(bot, cid, post['text'])
+                else:
+                    print("SEND MEDIA", post)
+                    response = ESCollector.send_media_post(bot, cid, post)
+
+                #if response.status_code != 200:
+                #    print("PAYLOAD", response)
+                #    raise ValueError(response)
+
+                #print("Response: ", response)
+                #print(response.text)
+                time.sleep(interval)
+
+
+    # Загружаем поисковый запрос пользователя
+    @task.python
+    def get_project(server, index, name):
+      es = Elasticsearch([{'host': server.host, 'port': server.port, 'use_ssl': True}])
+      query = {
+                "query": {
+                    "bool": {
+                       "filter": [
+                        {
+                           "term": {
+                                "_id": name
+                            }
+                        },
+                        {
+                           "term": {
+                                "status": "enable"
+                            }
+                        },
+                        {
+                           "range": {
+                                "actual_time": {
+                                    "gte": "now"
+                                 }
+                            }
+                        }
+                     ]
+                   }
+                }
+              }
+
+      result = es.search(index=index, body=query)
+      if len(result["hits"]["hits"]) == 0:
+          raise ValueError('Project %s not found' % name)
+          return None
+
+      params = result["hits"]["hits"][0]["_source"]
+      print(params)
+      return params 
+
+
+    # Загружаем поисковый запрос пользователя
+    @task.python
+    def get_filter(server, index, project):
+      es = Elasticsearch([{'host': server.host, 'port': server.port, 'use_ssl': True}])
+      query = {
+          "query": {
+                  "term": {
+                      "_id": project["filter_name"]
+                  }
+          }
+      }
+
+      result = es.search(index=index, body=query)
+      if len(result["hits"]["hits"]) == 0:
+          raise ValueError('Filter %s not found' % project["filter_name"])
+          return None
+      #print(result["hits"]["hits"][0]["_source"]["query"])
+      filter = result["hits"]["hits"][0]["_source"]
+      print(filter)
+      return filter
+
+
+
+    # Применяем пользовательский запрос
+    @task.python
+    def apply_filter(server, query, project):
+      es = Elasticsearch([{'host': server.host, 'port': server.port, 'use_ssl': True}])
+      if query == None:
+          raise ValueError("Empty Query")
+      result = es.search(index=project["index"], body=query)
+      if len(result["hits"]["hits"]) == 0:
+          raise ValueError('Messages %s not found' % project["filter_name"])
+      return result["hits"]["hits"]
+
+#=================================================================================================================================
+
+    def set_last_msg(server, index, filter_id, msg_id):
+        es = Elasticsearch([{'host': server.host, 'port': server.port, 'use_ssl': True}]) 
+        query = {
+            "doc": {
+                "search_after": [msg_id]
+            }
+        }
+        result = es.update(index=index, id=filter_id ,body=query)
+        if result['result'] != "updated":
+            print("Set Message ID Error. Respone :", result, "\nMessage ID :", msg_id)
+            raise ValueError('Message ID %s dont set' % msg_id)
+
+
+    def generate_link(destination):
+        if destination["type"] == "user":
+            if destination["username"] != "":
+                return "https://t.me/%s" % destination["username"]
+            return ""
+        # return "tg://user?id=%d" % destination["id"]
+        else :
+            if destination["username"] != "":
+                return "https://t.me/%s" % destination["username"]
+            return "https://t.me/c/%d" % destination["id"] 
+
+    def prepare_information_post(source):
+        if source["content"]["text"] == '':
+            raise ValueError('Text is empty')
+
+        chatLink = ESCollector.generate_link(source["location"])
+        chatName = source["location"]["first_name"]
+        chatName = re.sub(r'\[|\]', '', chatName)
+        text = "[%s](%s)\n" % (chatName, chatLink)
+
+        if source['sender']['id'] != source["location"]['id']:
+            senderLink = ESCollector.generate_link(source["sender"])
+            senderName = source["sender"]["first_name"]+" "+source["sender"]["last_name"] 
+            senderName = re.sub(r'\[|\]', '', senderName)
+            text += f"[%s](%s)\n\n" % (senderName, senderLink)
+        else:
+            text += "\n\n"
+
+        text += "[Сообщение](%s):\n" % source["content"]["link"]
+        text +=  re.sub(r'\*|_|`|~', '', source["content"]["text"])
+        
+        post = source["content"]
+        post["type"] = "text"
+        post["text"] = text
+        return post
+
+
+
+
+    def prepare_forward_post(source):
+        post = source["content"]
+        if post['type'] == 'videonote':
+            post['video_link'] = ESCollector.parse_videonote(post['link'])
+            return post
+        # FULL POST
+        url = post["link"] + "?embed=1&mode=tme"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        post["foto_link"] = ESCollector.parse_img_links(soup)
+        post["video_link"] = ESCollector.parse_video_links(soup)
+        print("TTTTTTT", post['text'])
+
+        if post['text'] == '':
+            post['text'] = ESCollector.parse_text(soup)
+            #if text != None:
+            #    post["text"] = text
+    
+        return post
+
+    def parse_videonote(url):
+        url = url.replace('https://telesco.pe', 'https://t.me')
+        url = url + "?embed=1&mode=tme"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        video_links = ESCollector.parse_video_links(soup)
+        return video_links[0]
+
+    def parse_videonote_telesco(url):
+        parts = url.split("/")
+        id = "/" + parts[3] + "/" + parts[4]
+        html = requests.get(url).text
+        soup = BeautifulSoup(html, 'html.parser')
+        container = soup.find('div', {'class': 'ts-post', 'data-url': id})
+        if container == None:
+           raise ValueError('Not find VideoNote container')
+        video = container.find('video')
+        src = video.find('source')['src']
+        return src
+
+
+
+    # Парсим веб версию поста
+    def parse_video_links(soup):
+        #soup = BeautifulSoup(html, 'html.parser')
+        videos = soup.find_all('video')
+        result = []
+        for v in videos:
+            result.append(v['src'])
+    
+        return ESCollector.delete_double(result)
+
+
+    def parse_img_links(soup):
+        links = []
+        for a_tag in soup.find_all('a', {'class': 'tgme_widget_message_photo_wrap'}):
+            if a_tag:
+                style_str = a_tag['style']
+                # Ищем URL фотографии в атрибуте style
+                photo_url = style_str.split("url('")[1].split("')")[0]
+                links.append(photo_url)
+
+        return links
+
+    def parse_text(soup):
+        tag = soup.find('div', {'class': 'tgme_widget_message_text js-message_text'})
+        if tag != None:
+           html = tag.decode_contents(formatter="html")
+           text = html2text.html2text(html)
+           #text = text.replace('_**', '_')
+           #text = text.replace('**_', '_')
+           text = text.replace('**', '*')
+           text = text.replace('_*', '')
+           text = text.replace('*_', '')
+           text = text.replace('_ *', '')
+           text = text.replace('* _', '')
+           text = text.replace('_', '')
+           return text.strip()
+        return None
+
+
+    # Удалить дубликаты в срезе
+    def delete_double(in_list):
+       result = []
+       for i in in_list:
+          if i not in result:
+              result.append(i)
+
+       return result
+
+
+    def send_text_post(bot, chat_id, text):
+       return bot.send_message(chat_id, text, parse_mode='Markdown', disable_web_page_preview=True)
+
+    def send_videonote(bot, chat_id, post):
+       url = post['video_link']
+       media = []
+       if url == '':
+           raise ValueError('Empty VideoNote link')
+       #vid = telebot.types.InputVideoNote(url)
+       #media.append(vid)
+       data = requests.get(url).content
+
+       return bot.send_video_note(chat_id, data)
+
+
+
+    def send_media_post(bot, chat_id, post):
+       # список объектов с параметрами для каждой картинки
+       if post['text'] != None:
+          caption = post['text']
+
+       media = []
+       for image_file in post['foto_link']:
+          if len(media)==0 and caption != None:
+              img = telebot.types.InputMediaPhoto(media=image_file, caption=caption, parse_mode='Markdown')
+          else:
+              img = telebot.types.InputMediaPhoto(image_file)
+          media.append(img)
+
+       for video_file in post['video_link']:
+          if len(media)==0 and caption != None:
+              vid = telebot.types.InputMediaVideo(media=video_file, caption=caption, parse_mode='Markdown')
+          else:
+              vid = telebot.types.InputMediaVideo(video_file)
+          media.append(vid)
+
+       return bot.send_media_group(chat_id, media)
