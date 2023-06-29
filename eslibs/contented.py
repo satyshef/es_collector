@@ -176,7 +176,8 @@ def prepare_user(user, tags):
 
 def prepare_markdown(text):
     text = text.strip()
-
+    text = text.replace('**__', '_')
+    text = text.replace('__**', '_')
     text = text.replace('__', '_')
     text = text.replace('**', '*')
     text = text.replace('[*', '[')
