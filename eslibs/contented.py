@@ -195,7 +195,7 @@ def prepare_markdown(text):
         is_formating = is_formatting_char(text, i)
         if is_formating != None and is_formating == False:
             result += "\\"
-        result += result[i]
+        result += text[i]
 
     text = text.replace('\n', ' \n')
     return text.strip()
