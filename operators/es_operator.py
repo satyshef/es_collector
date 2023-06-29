@@ -65,11 +65,11 @@ class ESCollector(BaseOperator):
                 continue
             
             #print("POST", post)
-            
+            text = ''
             if post['type']=='text':
-                try:
-                    msg = post['text']
-                except:
+                if 'text' in post:
+                    text = post['text']
+                else:
                     print('Text in text post not set')
                     continue
             
@@ -78,9 +78,9 @@ class ESCollector(BaseOperator):
                 if post['type']=='videonote':
                     print("SEND VIDEONOTE", post)
                     response = bot.send_videonote(cid, post)
-                elif post['type']=='text':
-                    print("SEND TEXT", post, " TO CHAT ", cid)
-                    response = bot.send_text(cid, msg)
+                elif text !='':
+                    print("SEND TEXT", text, " TO CHAT ", cid)
+                    response = bot.send_text(cid, text)
                 else:
                     print("SEND MEDIA", post)
                     response = bot.send_media_post(cid, post)

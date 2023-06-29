@@ -153,10 +153,14 @@ def prepare_forward2_post(source):
     #print("PPPPPPPPP", post)
     #if post['text'] == '':
     if 'text' not in post or not post['text']:
-        post['text'] = parser.get_text()
-
-    #post['text'] = webparser.prepare_markdown(post['text'])
-    post['text'] = "\n%s\n\n%s" % (postLink, post['text'])
+        text = parser.get_text()
+    else:
+        text = post['text']
+        
+    text = webparser.prepare_markdown(text)
+    text = "%s\n\n%s" % (postLink, text)
+    
+    post['text'] = text
     return post
 
 
