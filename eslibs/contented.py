@@ -156,7 +156,7 @@ def prepare_forward2_post(source):
         text = post['text']
         
     text = prepare_markdown(text)
-    text = " \n%s \n \n%s" % (postLink, text)
+    text = "🔵 🔵 🔵\n%s \n \n%s" % (postLink, text)
     
     post['text'] = text
     return post
