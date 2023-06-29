@@ -127,9 +127,7 @@ def prepare_forward_post(source):
 
     if 'text' not in post or not post['text']:
         post['text'] = parser.get_text()
-        #if text != None:
-        #    post["text"] = text
-
+    post['text'] = prepare_markdown(post['text'])
     return post
 
 
@@ -157,8 +155,8 @@ def prepare_forward2_post(source):
     else:
         text = post['text']
         
-    text = webparser.prepare_markdown(text)
-    text = "%s\n\n%s" % (postLink, text)
+    text = prepare_markdown(text)
+    text = " \n%s \n \n%s" % (postLink, text)
     
     post['text'] = text
     return post
@@ -175,3 +173,42 @@ def prepare_user(user, tags):
         #source['location']['first_name']
     }
     return user
+
+def prepare_markdown(text):
+    text = text.strip()
+
+    text = text.replace('__', '_')
+    text = text.replace('**', '*')
+    text = text.replace('[*', '[')
+    text = text.replace('*]', ']')
+
+    #Проверяем парность форматирующих символов, если не четное количество тогда все удаляем
+    if text.count("*") % 2 != 0:
+        text = text.replace('*', '')
+    if text.count("_") % 2 != 0:
+        text = text.replace('_', '')
+    if text.count("~") % 2 != 0:
+        text = text.replace('~', '')
+
+    result = ''
+    for i in range(len(text)):
+        is_formating = is_formatting_char(text, i)
+        if is_formating != None and is_formating == False:
+            result += "\\"
+        result += result[i]
+
+    text = text.replace('\n', ' \n')
+    return text.strip()
+
+# Проверка, что символ окружен другими символами или находится в начале или конце строки
+def is_formatting_char(text, index):
+    if text[index] != '*' and text[index] != '_' and text[index] != '~':
+        return None
+
+    if index == 0 or index == len(text) - 1:
+        return True
+    
+    if text[index - 1] == ' ' or text[index + 1] == ' ' or text[index - 1] == '\n' or text[index + 1] == '\n':
+        return True
+    
+    return False

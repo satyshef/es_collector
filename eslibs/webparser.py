@@ -74,31 +74,4 @@ class TelegramParser:
 
        return result
     
-def prepare_markdown(text):
-    text = text.strip()
-    #text = text.replace('_**', '_')
-    #text = text.replace('**_', '_')
-    text = text.replace('__', '_')
-    text = text.replace('**', '*')
-    text = text.replace('[*', '[')
-    text = text.replace('*]', ']')
-    #text = text.replace('_*', '')
-    #text = text.replace('*_', '')
-    #text = text.replace('_ *', '')
-    #text = text.replace('* _', '')
-    #text = re.sub(r'\_', '', text)
-    text = replace_underscore(text)
-    text = replace_asterisk(text)
-    return text.strip()
 
-# экранируем _ который среди текста
-def replace_underscore(text):
-    pattern = r'(?<!\s)_+(?!\s)'
-    replaced_text = re.sub(pattern, r'\_', text)
-    return replaced_text
-
-# экранируем * который среди текста
-def replace_asterisk(text):
-    pattern = r'(?<!\s)*+(?!\s)'
-    replaced_text = re.sub(pattern, r'\*', text)
-    return replaced_text
