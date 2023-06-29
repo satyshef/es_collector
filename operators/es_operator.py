@@ -38,25 +38,25 @@ class ESCollector(BaseOperator):
         bot = sender.TelegramWorker(bot_token)
 
         for msg in messages:
-            ESCollector.set_last_msg(server, filter_index, project["filter_name"], msg["_source"]["time"])
+            ESCollector.set_last_msg(server, filter_index, project["filter_name"], msg["time"])
             # Проверяем использовали уже пользователя 
             if check_user:
                 tags = '#'+project_name
                 user_index = 'tgusers_'+project_name
-                if ESCollector.save_user(server, user_index, msg['_source']['sender'], tags) != True:
-                    print('User Dont Save', msg['_source']['sender'])
+                if ESCollector.save_user(server, user_index, msg['sender'], tags) != True:
+                    print('User Dont Save', msg['sender'])
                     continue
            
-            if post_type == 'information_1':
-                post = Contented.prepare_information1_post(msg["_source"])
-            elif post_type == 'information_2':
-                post = Contented.prepare_information2_post(msg["_source"])
-            elif post_type == 'information_3':
-                post = Contented.prepare_information3_post(msg["_source"])
-            elif post_type == 'forward_2':
-                post = Contented.prepare_forward2_post(msg["_source"])
+            if post_type == 'template_1':
+                post = Contented.prepare_template1_post(msg)
+            elif post_type == 'template_2':
+                post = Contented.prepare_template2_post(msg)
+            elif post_type == 'template_3':
+                post = Contented.prepare_template3_post(msg)
+            elif post_type == 'template_4':
+                post = Contented.prepare_template4_post(msg)
             else:
-                post = Contented.prepare_forward_post(msg["_source"])
+                post = Contented.prepare_forward_post(msg)
 
             
             # Если post_type == 'information_1' и при этом текст отсутствует тогда post == None
@@ -176,12 +176,16 @@ class ESCollector(BaseOperator):
           #raise ValueError('Messages %s not found' % project["filter_name"])
           print('Messages %s not found' % project["filter_name"])
           raise AirflowSkipException
-      posts = result["hits"]["hits"]
+      sources = result["hits"]["hits"]
       result = []
-      for post in posts:
+      for s in sources:
+          if 'content' not in s['_source']:
+              print('Empty content')
+              continue
+          post = s['_source']
           # Если поле text не существует то присваевыем ему ''
-          if 'text' not in post or not post['text']:
-              post['text'] = ''
+          if 'text' not in post['content']:
+              post['content']['text'] = ''
           result.append(post)
 
       return result

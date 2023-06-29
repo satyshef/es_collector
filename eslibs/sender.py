@@ -25,9 +25,6 @@ class TelegramWorker:
         return self.bot.send_video_note(chat_id, data)
 
     def send_media_post(self, chat_id, post):
-        if post['text'] != None:
-            text = post['text']
-
         media = []
         for image_file in post['foto_link']:
             img = telebot.types.InputMediaPhoto(image_file)
@@ -37,13 +34,17 @@ class TelegramWorker:
             vid = telebot.types.InputMediaVideo(video_file)
             media.append(vid)
 
+        text = post['text']
         #если медиа нет
         if len(media) == 0:
-           if text != None:
+           if text != '':
                print("Send text instead of media")
                return self.send_text(chat_id, text)
            else:
-               raise ValueError('Media is empty')
+               # Сообщение изначально без текста и оно либо удалено либо большой размер файла(невозможно загрузить медиа через веб) 
+               #print('Empty content')
+               #return
+               raise ValueError('Media dont send. Empty content')
            
         if len(text) > 1024:
             #Если длинный текст отправляем медиа отдельно от текстста
