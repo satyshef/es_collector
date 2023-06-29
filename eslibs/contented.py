@@ -125,9 +125,12 @@ def prepare_forward_post(source):
     # post["foto_link"] = Webparser.parse_img_links(soup)
     # post["video_link"] = Webparser.parse_video_links(soup)
 
-    if 'text' not in post or not post['text']:
+    #if 'text' not in post or not post['text']:
+    if post['text'] == '':
         post['text'] = parser.get_text()
-    post['text'] = prepare_markdown(post['text'])
+    
+    if post['text'] != '':
+        post['text'] = prepare_markdown(post['text'])
     return post
 
 
@@ -149,16 +152,15 @@ def prepare_forward2_post(source):
     post["video_link"] = parser.get_video_links()
 
     #print("PPPPPPPPP", post)
-    #if post['text'] == '':
-    if 'text' not in post or not post['text']:
+    #if 'text' not in post or not post['text']:
+    if post['text'] == '':
         text = parser.get_text()
     else:
         text = post['text']
-        
-    text = prepare_markdown(text)
-    text = "🔵 🔵 🔵\n%s \n \n%s" % (postLink, text)
-    
-    post['text'] = text
+    if text != '':
+        text = prepare_markdown(text)
+        text = "🔵 🔵 🔵\n%s \n \n%s" % (postLink, text)
+        post['text'] = text
     return post
 
 
@@ -175,6 +177,8 @@ def prepare_user(user, tags):
     return user
 
 def prepare_markdown(text):
+    if text == '':
+        return ''
     text = text.strip()
     text = text.replace('**__', '_')
     text = text.replace('__**', '_')

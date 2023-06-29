@@ -176,7 +176,15 @@ class ESCollector(BaseOperator):
           #raise ValueError('Messages %s not found' % project["filter_name"])
           print('Messages %s not found' % project["filter_name"])
           raise AirflowSkipException
-      return result["hits"]["hits"]
+      posts = result["hits"]["hits"]
+      result = []
+      for post in posts:
+          # Если поле text не существует то присваевыем ему ''
+          if 'text' not in post or not post['text']:
+              post['text'] = ''
+          result.append(post)
+
+      return result
 
 #=================================================================================================================================
 

@@ -60,9 +60,9 @@ class TelegramParser:
         tag = self.soup.find('div', {'class': 'tgme_widget_message_text js-message_text'})
         if tag != None:
            html = tag.decode_contents(formatter="html")
-           text = html2text.html2text(html)
-           return prepare_markdown(text)
-        return None
+           return html2text.html2text(html)
+           #return prepare_markdown(text)
+        return ''
 
 
     # Удалить дубликаты в срезе
