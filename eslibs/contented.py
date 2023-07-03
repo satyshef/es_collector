@@ -147,7 +147,7 @@ def prepare_template4_post(source):
     text = post['text']
     if text != '':
         text = prepare_markdown(text)
-        text = "🔵 🔵 🔵\n%s \n \n%s" % (postLink, text)
+        text = "🟢 %s \n \n%s" % (postLink, text)
         post['text'] = text
     return post
 

@@ -14,6 +14,7 @@ from airflow.exceptions import AirflowSkipException
 
 from elasticsearch import Elasticsearch, exceptions
 
+ADVANCE_WARNING = 24
 #import telegram
 #from telegram import InputMediaPhoto, InputMediaVideo
 
@@ -31,29 +32,29 @@ class ESCollector(BaseOperator):
 
 
     @task.python
-    def send_messages(server, project_name, filter_index, messages, project, interval=1, post_type='forward', check_user=False):
+    def send_messages(server, project, messages, interval=1, check_user=False):
         bot_token = project["bot_token"]
         chat_id = project["chat_id"]
-        #bot = telegram.Bot(token = bot_token)
+        
         bot = sender.TelegramWorker(bot_token)
-
+        result = []
         for msg in messages:
-            ESCollector.set_last_msg(server, filter_index, project["filter_name"], msg["time"])
+            ESCollector.set_last_msg(server, project["filter_index"], project["filter_name"], msg["time"])
             # Проверяем использовали уже пользователя 
             if check_user:
-                tags = '#'+project_name
-                user_index = 'tgusers_'+project_name
+                tags = '#' + project["name"]
+                user_index = 'tgusers_' + project["name"]
                 if ESCollector.save_user(server, user_index, msg['sender'], tags) != True:
                     print('User Dont Save', msg['sender'])
                     continue
            
-            if post_type == 'template_1':
+            if project["post_template"] == 'template_1':
                 post = Contented.prepare_template1_post(msg)
-            elif post_type == 'template_2':
+            elif project["post_template"] == 'template_2':
                 post = Contented.prepare_template2_post(msg)
-            elif post_type == 'template_3':
+            elif project["post_template"] == 'template_3':
                 post = Contented.prepare_template3_post(msg)
-            elif post_type == 'template_4':
+            elif project["post_template"] == 'template_4':
                 post = Contented.prepare_template4_post(msg)
             else:
                 post = Contented.prepare_forward_post(msg)
@@ -85,17 +86,20 @@ class ESCollector(BaseOperator):
                     print("SEND MEDIA", post)
                     response = bot.send_media_post(cid, post)
 
+                time.sleep(interval)
+
+            result.append(msg)
                 #if response.status_code != 200:
                 #    print("SEND ERROR:", response)
                 #    raise ValueError(response)
 
                 #print("Response: ", response)
                 #print(response.text)
-                time.sleep(interval)
-
+                
+        return result
 
     # Загружаем поисковый запрос пользователя
-    @task.python
+    @task(task_id="load_project_dont_used")
     def get_project(server, index, name):
       es = ESCollector.ESNew(server)
       query = {
@@ -117,12 +121,11 @@ class ESCollector(BaseOperator):
 
     # Проверяем время актуальности задачи пользователя. Если задача не актуальна отправляем уведомление
     @task.python
-    def date_checker(project, end_date, interval):
-        # Получение экземпляра задачи по идентификаторам DAG, task_id и execution_date
-        #interval = timedelta(minutes=10)
+    def date_checker(project):
+        end_date = project['end_date']
+        interval = project['interval']
         current_date = datetime.now()
-        h = 10
-        one_day = timedelta(minutes=h)
+        one_day = timedelta(hours=ADVANCE_WARNING)
         bot = sender.TelegramWorker(project["bot_token"])
         start = current_date + one_day
         end = start + interval
@@ -144,7 +147,7 @@ class ESCollector(BaseOperator):
 
     # Загружаем поисковый запрос пользователя
     @task.python
-    def get_filter(server, index, project):
+    def get_filter(server, project):
       es = ESCollector.ESNew(server)
       query = {
           "query": {
@@ -153,8 +156,7 @@ class ESCollector(BaseOperator):
                   }
           }
       }
-
-      result = es.search(index=index, body=query)
+      result = es.search(index=project["filter_index"], body=query)
       if len(result["hits"]["hits"]) == 0:
           raise ValueError('Filter %s not found' % project["filter_name"])
 
@@ -167,7 +169,7 @@ class ESCollector(BaseOperator):
 
     # Применяем пользовательский запрос
     @task.python
-    def apply_filter(server, query, project):
+    def get_messages(server, project, query):
       es = ESCollector.ESNew(server)
       if query == None:
           raise ValueError("Empty Query")
@@ -189,6 +191,13 @@ class ESCollector(BaseOperator):
           result.append(post)
 
       return result
+    
+    @task.python
+    def messages_checker(server, project, messages):
+        for m in messages:
+            #ESCollector.save_message(server, project["userpost_index"], m)
+            ESCollector.compare_message(server, project, m)
+
 
 #=================================================================================================================================
 
@@ -215,7 +224,56 @@ class ESCollector(BaseOperator):
             return True
         except exceptions.ConflictError:
             return False
-        
+    
+    def save_message(server, index, post): 
+        es = ESCollector.ESNew(server) 
+        #user = Contented.prepare_user(msg['_source']['sender'], '#pankruxin')
+        try:
+            result = es.index(index=index, body=post)
+            print("Save Post", result)
+            return True
+        except exceptions.ConflictError:
+            return False
+
+
+
+    def compare_message(server, project, message):
+        message_index = project["index"]
+        userpost_index = project["userpost_index"]
+        text = message["content"]["text"]
+        print("TEXTTTTTTT", text)
+        es = ESCollector.ESNew(server) 
+        query = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "content.text": text
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+         # Получаем оригинал
+        result = es.search(index=message_index, body=query)
+        if len(result["hits"]["hits"]) == 0:
+            print("Post not found")
+            return
+        original_score = result["hits"]["hits"][0]["_score"]
+
+        # Ищем документ в пользовательском индексе
+        result = es.search(index=userpost_index, body=query)
+        if len(result["hits"]["hits"]) == 0:
+            print("Post not found")
+            return
+            #raise ValueError('Project %s not found' % name)
+        found_score = result["hits"]["hits"][0]["_score"]
+        print("original_score: ", original_score)
+        print("found_score: ", found_score)
+        return None
+    
     def ESNew(server):
         #extra = json.loads(server.extra)
         if server.login != "":
