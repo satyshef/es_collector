@@ -87,7 +87,7 @@ class ESCollector(BaseOperator):
                     response = bot.send_media_post(cid, post)
 
                 time.sleep(interval)
-
+            ESCollector.save_message(server, project["customer_index"], msg)
             result.append(msg)
                 #if response.status_code != 200:
                 #    print("SEND ERROR:", response)
@@ -193,11 +193,15 @@ class ESCollector(BaseOperator):
       return result
     
     @task.python
-    def messages_checker(server, project, messages):
-        for m in messages:
-            #ESCollector.save_message(server, project["userpost_index"], m)
-            ESCollector.compare_message(server, project, m)
-
+    def dublicates_checker(server, project, messages):
+        result = []
+        for msg in messages:
+            if ESCollector.search_message(server, project["customer_index"], msg) == None:
+                result.append(msg)
+            else:
+                print("Double", msg)
+        
+        return result
 
 #=================================================================================================================================
 
@@ -236,19 +240,17 @@ class ESCollector(BaseOperator):
             return False
 
 
-
-    def compare_message(server, project, message):
-        message_index = project["index"]
-        userpost_index = project["userpost_index"]
+    def search_message(server, index, message):
+        
         text = message["content"]["text"]
-        print("TEXTTTTTTT", text)
+        
         es = ESCollector.ESNew(server) 
         query = {
             "query": {
                 "bool": {
                     "must": [
                         {
-                            "match": {
+                            "match_phrase": {
                                 "content.text": text
                             }
                         }
@@ -256,23 +258,13 @@ class ESCollector(BaseOperator):
                 }
             }
         }
-         # Получаем оригинал
-        result = es.search(index=message_index, body=query)
-        if len(result["hits"]["hits"]) == 0:
-            print("Post not found")
-            return
-        original_score = result["hits"]["hits"][0]["_score"]
-
+         
         # Ищем документ в пользовательском индексе
-        result = es.search(index=userpost_index, body=query)
+        result = es.search(index=index, body=query)
         if len(result["hits"]["hits"]) == 0:
-            print("Post not found")
-            return
-            #raise ValueError('Project %s not found' % name)
-        found_score = result["hits"]["hits"][0]["_score"]
-        print("original_score: ", original_score)
-        print("found_score: ", found_score)
-        return None
+            return None
+        return result["hits"]["hits"][0]
+        
     
     def ESNew(server):
         #extra = json.loads(server.extra)
