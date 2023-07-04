@@ -125,13 +125,13 @@ class ESCollector(BaseOperator):
         end_date = project['end_date']
         interval = project['interval']
         current_date = datetime.now()
-        one_day = timedelta(hours=ADVANCE_WARNING)
+        first_term = timedelta(hours=ADVANCE_WARNING)
         bot = sender.TelegramWorker(project["bot_token"])
-        start = current_date + one_day
+        start = current_date + first_term
         end = start + interval
         # Проверяем суточный остаток
         if start <= end_date and end > end_date:
-            info = 'ℹ #info\n\nРабота парсера прекратится через %s минут\n\nДля продления услуги свяжитесь с @vagerman' % h
+            info = 'ℹ #info\n\nРабота парсера прекратится через %s\n\nДля продления услуги свяжитесь с @vagerman' % first_term
             for cid in project['chat_id']:
                 response = bot.send_text(cid, info)
                 print(response)
@@ -144,10 +144,15 @@ class ESCollector(BaseOperator):
                 response = bot.send_text(cid, info)
                 print(response)
             raise AirflowSkipException
+        
+        return True
 
     # Загружаем поисковый запрос пользователя
     @task.python
-    def get_filter(server, project):
+    def get_filter(server, project, checked):
+      if checked != True:
+          raise AirflowSkipException
+      
       es = ESCollector.ESNew(server)
       query = {
           "query": {
@@ -196,11 +201,16 @@ class ESCollector(BaseOperator):
     def dublicates_checker(server, project, messages):
         result = []
         for msg in messages:
+            last_time = msg["time"]
             if ESCollector.search_message(server, project["customer_index"], msg) == None:
                 result.append(msg)
             else:
                 print("Double", msg)
-        
+        #Если все дубли записываем время последнего сообщения в БД
+        if len(result) == 0:
+            if last_time != None:
+                ESCollector.set_last_msg(server, project["filter_index"], project["filter_name"], last_time)
+            raise AirflowSkipException
         return result
 
 #=================================================================================================================================

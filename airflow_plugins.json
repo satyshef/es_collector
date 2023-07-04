@@ -1,7 +1,7 @@
 {
-    "name": "es_collector",
+    "name": "es_collector_v2",
     "description": "Elasticsearch Collector plugin",
-    "version": "0.1",
+    "version": "0.2",
     "plugins": [],
     "hooks": [],
     "operators": ["es_collector.operators.es_operator.ESOperator"],
