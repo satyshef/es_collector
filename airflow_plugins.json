@@ -1,5 +1,5 @@
 {
-    "name": "es_collector_v2",
+    "name": "es_collector",
     "description": "Elasticsearch Collector plugin",
     "version": "0.2",
     "plugins": [],

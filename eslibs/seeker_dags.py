@@ -22,6 +22,7 @@ def load_project(name):
             return None
         
         project['name'] = name
+        project['path'] = path
         project['start_date'] = datetime.strptime(project['start_date'], '%Y-%m-%d %H:%M:%S')
         project['end_date'] = datetime.strptime(project['end_date'], '%Y-%m-%d %H:%M:%S')
         project['interval'] = timedelta(minutes=project['interval'])

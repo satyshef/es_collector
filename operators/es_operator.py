@@ -39,8 +39,8 @@ class ESCollector(BaseOperator):
         bot = sender.TelegramWorker(bot_token)
         result = []
         for msg in messages:
-            
-            ESCollector.set_last_msg(server, project["filter_index"], project["filter_name"], msg["time"])
+            ESCollector.set_last_message(project, msg)
+            #ESCollector.set_last_msg(server, project["filter_index"], project["filter_name"], msg["time"])
             # Проверяем использовали уже пользователя 
             if check_user:
                 tags = '#' + project["name"]
@@ -213,21 +213,30 @@ class ESCollector(BaseOperator):
     def dublicates_checker(server, project, messages):
         result = []
         for msg in messages:
-            last_time = msg["time"]
+            last_msg = msg["time"]
             if ESCollector.search_message(server, project["project_index"], msg, project["check_double_text"], project["check_double_user"]) == None:
                 result.append(msg)
             else:
                 print("Double", msg)
         #Если все дубли записываем время последнего сообщения в БД
         if len(result) == 0:
-            if last_time != None:
-                ESCollector.set_last_msg(server, project["filter_index"], project["filter_name"], last_time)
+            if last_msg != None:
+                ESCollector.set_last_message(project, last_msg)
+                #ESCollector.set_last_msg(server, project["filter_index"], project["filter_name"], last_msg)
             raise AirflowSkipException
         return result
 
 #=================================================================================================================================
 
-    def set_last_msg(server, index, filter_id, msg_id):
+    def set_last_message(project, msg):
+        project["search_after"] = msg["time"]
+        with open(project["path"], "w") as file:
+            del project["path"]
+            json.dump(project, file, indent=4)
+
+
+    # Write to es server. Dont used
+    def set_last_msg_1(server, index, filter_id, msg_id):
         es = ESCollector.ESNew(server) 
         query = {
             "doc": {
