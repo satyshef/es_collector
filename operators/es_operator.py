@@ -201,12 +201,8 @@ class ESCollector(BaseOperator):
     def dublicates_checker(server, project, messages):
         result = []
         for msg in messages:
-<<<<<<< HEAD
             last_time = msg["time"]
-            if ESCollector.search_message(server, project["customer_index"], msg) == None:
-=======
             if ESCollector.search_message(server, project["customer_index"], msg, True, False) == None:
->>>>>>> 6badd77debc587b4979fc7e7280ad022a89beecb
                 result.append(msg)
             else:
                 print("Double", msg)
