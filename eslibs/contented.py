@@ -45,7 +45,7 @@ def prepare_template1_post(source):
     result += text
     #text +=  re.sub(r'\*|_|`|~', '', msg)
     
-    post = source["content"]
+    post = source["content"].copy()
     post["type"] = "text"
     post["text"] = result
     return post
@@ -83,7 +83,7 @@ def prepare_template2_post(source):
     result += text
     #text +=  re.sub(r'\*|_|`|~', '', msg)
     result += "\n\n%s" % postLink
-    post = source["content"]
+    post = source["content"].copy()
     post["type"] = "text"
     post["text"] = result
     return post
@@ -118,7 +118,7 @@ def prepare_template3_post(source):
     result += text
     #text +=  re.sub(r'\*|_|`|~', '', msg)
 
-    post = source["content"]
+    post = source["content"].copy()
     post["type"] = "text"
     post["text"] = result
     return post

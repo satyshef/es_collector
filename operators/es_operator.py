@@ -88,7 +88,7 @@ class ESCollector(BaseOperator):
 
                 time.sleep(interval)
 #            print("MMMMMMMM", msg)
-            ESCollector.save_message(server, project["customer_index"], msg)
+            ESCollector.save_message(server, project["project_index"], msg)
             result.append(msg)
                 #if response.status_code != 200:
                 #    print("SEND ERROR:", response)
@@ -148,8 +148,10 @@ class ESCollector(BaseOperator):
         
         return True
 
-    # Загружаем поисковый запрос пользователя
+    
     @task.python
+    # Загружаем поисковый запрос пользователя
+    # checked - результат проверки актуальности проекта. Нужен для того что бы дождаться результата date_ckecker
     def get_filter(server, project, checked):
       if checked != True:
           raise AirflowSkipException
@@ -168,6 +170,15 @@ class ESCollector(BaseOperator):
 
       #print(result["hits"]["hits"][0]["_source"]["query"])
       filter = result["hits"]["hits"][0]["_source"]
+      if "size" in project:
+        filter["size"] = project["size"]
+    
+      if "search_after" in project:
+        filter["search_after"]= [project["search_after"]]
+
+      if "sort" in project:
+        filter["sort"] = project["sort"]
+
       print(filter)
       return filter
 
@@ -203,7 +214,7 @@ class ESCollector(BaseOperator):
         result = []
         for msg in messages:
             last_time = msg["time"]
-            if ESCollector.search_message(server, project["customer_index"], msg, True, True) == None:
+            if ESCollector.search_message(server, project["project_index"], msg, project["check_double_text"], project["check_double_user"]) == None:
                 result.append(msg)
             else:
                 print("Double", msg)
