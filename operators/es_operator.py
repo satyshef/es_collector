@@ -39,6 +39,7 @@ class ESCollector(BaseOperator):
         bot = sender.TelegramWorker(bot_token)
         result = []
         for msg in messages:
+            
             ESCollector.set_last_msg(server, project["filter_index"], project["filter_name"], msg["time"])
             # Проверяем использовали уже пользователя 
             if check_user:
@@ -59,7 +60,6 @@ class ESCollector(BaseOperator):
             else:
                 post = Contented.prepare_forward_post(msg)
 
-            
             # Если post_type == 'information_1' и при этом текст отсутствует тогда post == None
             if post == None:
                 print('Post is empty')
@@ -87,6 +87,7 @@ class ESCollector(BaseOperator):
                     response = bot.send_media_post(cid, post)
 
                 time.sleep(interval)
+#            print("MMMMMMMM", msg)
             ESCollector.save_message(server, project["customer_index"], msg)
             result.append(msg)
                 #if response.status_code != 200:
@@ -202,7 +203,7 @@ class ESCollector(BaseOperator):
         result = []
         for msg in messages:
             last_time = msg["time"]
-            if ESCollector.search_message(server, project["customer_index"], msg, True, False) == None:
+            if ESCollector.search_message(server, project["customer_index"], msg, True, True) == None:
                 result.append(msg)
             else:
                 print("Double", msg)
@@ -288,8 +289,12 @@ class ESCollector(BaseOperator):
         }
          
         # Ищем документ в пользовательском индексе
-        result = es.search(index=index, body=query)
-        if len(result["hits"]["hits"]) == 0:
+        try:
+          result = es.search(index=index, body=query)
+        except exceptions.NotFoundError:
+            return None
+
+        if result == None or len(result["hits"]["hits"]) == 0:
             return None
         return result["hits"]["hits"][0]
         

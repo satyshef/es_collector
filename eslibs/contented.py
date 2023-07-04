@@ -127,12 +127,11 @@ def prepare_template4_post(source):
     if source["content"] == None:
         print("None content")
         return None
-
-    post = source["content"]
+  
+    post = source["content"].copy()
     postLink = "[%s](%s)" % (source["location"]["first_name"], source["content"]["link"])
     parser = webparser.TelegramParser(post['link'])
-    # print("PARSER", parser.soup)
-    # return None
+  
     if post['type'] == 'videonote':
         post['video_link'] = parser.get_videonote()
         return post
@@ -144,6 +143,7 @@ def prepare_template4_post(source):
     # if post['text'] == '':
     #     text = parser.get_text()
     # else:
+
     text = post['text']
     if text != '':
         text = prepare_markdown(text)
