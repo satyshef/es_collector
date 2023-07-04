@@ -213,7 +213,7 @@ class ESCollector(BaseOperator):
     def dublicates_checker(server, project, messages):
         result = []
         for msg in messages:
-            last_msg = msg["time"]
+            last_msg = msg
             if ESCollector.search_message(server, project["project_index"], msg, project["check_double_text"], project["check_double_user"]) == None:
                 result.append(msg)
             else:
@@ -229,10 +229,16 @@ class ESCollector(BaseOperator):
 #=================================================================================================================================
 
     def set_last_message(project, msg):
-        project["search_after"] = msg["time"]
-        with open(project["path"], "w") as file:
-            del project["path"]
-            json.dump(project, file, indent=4)
+        # Копируем обьект что бы не изменять оригинал
+        p = project.copy()
+        p["search_after"] = msg["time"]
+        p['start_date'] = p['start_date'].strftime("%Y-%m-%d %H:%M:%S")
+        p['end_date'] = p['end_date'].strftime("%Y-%m-%d %H:%M:%S")
+        p['interval'] = int(p['interval'].total_seconds() / 60)
+
+        with open(p["path"], "w") as file:
+            del p["path"]
+            json.dump(p, file, indent=4)
 
 
     # Write to es server. Dont used
