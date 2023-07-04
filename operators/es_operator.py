@@ -201,8 +201,12 @@ class ESCollector(BaseOperator):
     def dublicates_checker(server, project, messages):
         result = []
         for msg in messages:
+<<<<<<< HEAD
             last_time = msg["time"]
             if ESCollector.search_message(server, project["customer_index"], msg) == None:
+=======
+            if ESCollector.search_message(server, project["customer_index"], msg, True, False) == None:
+>>>>>>> 6badd77debc587b4979fc7e7280ad022a89beecb
                 result.append(msg)
             else:
                 print("Double", msg)
@@ -250,21 +254,39 @@ class ESCollector(BaseOperator):
             return False
 
 
-    def search_message(server, index, message):
-        
-        text = message["content"]["text"]
+    # by_text - поиск текста
+    # by_user - учитывать id пользователя (sender.id)
+    def search_message(server, index, message, by_text=True, by_user=True):
+        must = []
+
+        if by_text:
+            text = message["content"]["text"]
+            if text != None and text != '':
+                q ={
+                    "match_phrase": {
+                        "content.text": text
+                    }
+                }
+                must.append(q)
+
+        if by_user:
+            user_id = message["sender"]["id"]
+            if user_id != None and user_id != '':
+                q ={
+                    "term": {
+                        "sender.id": user_id
+                    }
+                }
+                must.append(q)
+
+        if len(must) == 0:
+            return None      
         
         es = ESCollector.ESNew(server) 
         query = {
             "query": {
                 "bool": {
-                    "must": [
-                        {
-                            "match_phrase": {
-                                "content.text": text
-                            }
-                        }
-                    ]
+                    "must": must
                 }
             }
         }
