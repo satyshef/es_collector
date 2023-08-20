@@ -12,6 +12,44 @@ def generate_link(destination):
                 return "https://t.me/%s" % destination["username"]
             return "https://t.me/c/%d" % destination["id"] 
 
+def prepare_demo1_post(source):
+    if source["content"] == None:
+        return None
+
+    text = source["content"].get("text")
+    if text == None:
+        return None
+
+    text = prepare_markdown(text)
+    if text == '':
+        print('Empty text')
+        return ''
+
+    #chatLink = generate_link(source["location"])
+    chatName = source["location"]["first_name"]
+    chatName = re.sub(r'\[|\]', '', chatName)
+    #postLink = "[Сообщение](%s):\n" % source["content"]["link"]
+
+    result = "*%s*\n" % (chatName)
+
+    if source['sender']['id'] != source["location"]['id']:
+        #senderLink = generate_link(source["sender"])
+        senderName = source["sender"]["first_name"]+" "+source["sender"]["last_name"] 
+        senderName = re.sub(r'\[|\]', '', senderName)
+        result += f"\n*%s*:\n" % (senderName)
+    else:
+        result += "\n\n"
+
+    #result += postLink
+    result += text
+    #text +=  re.sub(r'\*|_|`|~', '', msg)
+
+    post = source["content"]
+    post["type"] = "text"
+    post["text"] = result
+    return post
+
+
 # название чата:имя отправителя:ссылка на сообщение:текст сообщения
 def prepare_template1_post(source):
     if source["content"] == None:

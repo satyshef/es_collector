@@ -1,4 +1,5 @@
 
+# модуль взаімодействія с сервером Elasticsearch
 import time
 import json
 from datetime import datetime, timedelta
@@ -57,6 +58,8 @@ class ESCollector(BaseOperator):
                 post = Contented.prepare_template3_post(msg)
             elif project["post_template"] == 'template_4':
                 post = Contented.prepare_template4_post(msg)
+            elif project["post_template"] == 'demo_1':
+                post = Contented.prepare_demo1_post(msg)
             else:
                 post = Contented.prepare_forward_post(msg)
 
