@@ -42,9 +42,9 @@ class TelegramWorker:
                return self.send_text(chat_id, text)
            else:
                # Сообщение изначально без текста и оно либо удалено либо большой размер файла(невозможно загрузить медиа через веб) 
-               #print('Empty content')
-               #return
-               raise ValueError('Media dont send. Empty content')
+               print('Media dont send. Empty content')
+               return
+               #raise ValueError('Media dont send. Empty content')
            
         if len(text) > 1024:
             #Если длинный текст отправляем медиа отдельно от текстста

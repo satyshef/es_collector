@@ -7,7 +7,7 @@ from airflow.hooks.base_hook import BaseHook
 from es_collector.operators.es_operator import ESCollector
 
      
-server = BaseHook.get_connection('elasticsearch_host')
+server = BaseHook.get_connection('elasticsearch_host2')
 project_dir = "/opt/airflow/dags/projects/"
 
 def load_project(name):
