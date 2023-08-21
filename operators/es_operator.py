@@ -5,7 +5,8 @@ import json
 from datetime import datetime, timedelta
 
 import es_collector.eslibs.contented as Contented
-import es_collector.eslibs.sender as sender
+import es_collector.eslibs.sender as Sender
+import es_collector.eslibs.users as Users
 
 from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -37,7 +38,7 @@ class ESCollector(BaseOperator):
         bot_token = project["bot_token"]
         chat_id = project["chat_id"]
         
-        bot = sender.TelegramWorker(bot_token)
+        bot = Sender.TelegramWorker(bot_token)
         result = []
         for msg in messages:
             ESCollector.set_last_message(project, msg)
@@ -46,8 +47,8 @@ class ESCollector(BaseOperator):
             if check_user:
                 tags = '#' + project["name"]
                 user_index = 'tgusers_' + project["name"]
-                if ESCollector.save_user(server, user_index, msg['sender'], tags) != True:
-                    print('User Dont Save', msg['sender'])
+                if ESCollector.save_user(server, user_index, msg['Sender'], tags) != True:
+                    print('User Dont Save', msg['Sender'])
                     continue
            
             if project["post_template"] == 'template_1':
@@ -60,6 +61,8 @@ class ESCollector(BaseOperator):
                 post = Contented.prepare_template4_post(msg)
             elif project["post_template"] == 'demo_1':
                 post = Contented.prepare_demo1_post(msg)
+            elif project["post_template"] == 'forward_media':
+                post = Contented.prepare_forward_media(msg)
             else:
                 post = Contented.prepare_forward_post(msg)
 
@@ -130,7 +133,7 @@ class ESCollector(BaseOperator):
         interval = project['interval']
         current_date = datetime.now()
         first_term = timedelta(hours=ADVANCE_WARNING)
-        bot = sender.TelegramWorker(project["bot_token"])
+        bot = Sender.TelegramWorker(project["bot_token"])
         start = current_date + first_term
         end = start + interval
         # Проверяем суточный остаток
@@ -229,6 +232,9 @@ class ESCollector(BaseOperator):
             raise AirflowSkipException
         return result
 
+    @task.python
+    def extract_users(messages):
+        Users.extract_users(messages)
 #=================================================================================================================================
 
     def set_last_message(project, msg):
@@ -260,7 +266,7 @@ class ESCollector(BaseOperator):
 
     def save_user(server, index, user, tags): 
         es = ESCollector.ESNew(server) 
-        #user = Contented.prepare_user(msg['_source']['sender'], '#pankruxin')
+        #user = Contented.prepare_user(msg['_source']['Sender'], '#pankruxin')
         query = Contented.prepare_user(user, tags)
         try:
             result = es.create(index=index, id=user['id'] ,body=query)
@@ -271,7 +277,7 @@ class ESCollector(BaseOperator):
     
     def save_message(server, index, post): 
         es = ESCollector.ESNew(server) 
-        #user = Contented.prepare_user(msg['_source']['sender'], '#pankruxin')
+        #user = Contented.prepare_user(msg['_source']['Sender'], '#pankruxin')
         try:
             result = es.index(index=index, body=post)
             print("Save Post", result)
@@ -281,7 +287,7 @@ class ESCollector(BaseOperator):
 
 
     # by_text - поиск текста
-    # by_user - учитывать id пользователя (sender.id)
+    # by_user - учитывать id пользователя (Sender.id)
     def search_message(server, index, message, by_text=True, by_user=True):
         must = []
 

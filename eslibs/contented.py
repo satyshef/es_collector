@@ -189,6 +189,21 @@ def prepare_template4_post(source):
         post['text'] = text
     return post
 
+def prepare_forward_media(source):
+    if source["content"] == None:
+        print("None content")
+        return None
+    post = source["content"]
+    parser = webparser.TelegramParser(post['link'])
+    if post['type'] == 'videonote':
+        post['video_link'] = parser.get_videonote()
+        return post
+        
+    post["foto_link"] = parser.get_img_links()
+    post["video_link"] = parser.get_video_links()
+    post['text'] = ''
+    return post
+
 
 def prepare_forward_post(source):
     if source["content"] == None:

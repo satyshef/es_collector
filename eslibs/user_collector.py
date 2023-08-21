@@ -1,10 +1,11 @@
+# Скрипт сбора пользователей
 import json   
 from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.hooks.base_hook import BaseHook
 from es_collector.operators.es_operator import ESCollector
-        
+
      
 server = BaseHook.get_connection('elasticsearch_host')
 project_dir = "/opt/airflow/dags/projects/"
@@ -57,10 +58,8 @@ def create_dag(project):
 def run_dag(dag, project):
     if dag == None or project == None:
         return
-    if project["succession"] == "dubler":
-        succession_dubler(dag, project)
-    else:
-        succession_default(dag, project)
+
+    succession_default(dag, project)
 
 
 # порядок выполнения задач
@@ -69,12 +68,6 @@ def succession_default(dag, project):
         check = ESCollector.date_checker(project)
         filter = ESCollector.get_filter(server, project, check)
         messages = ESCollector.get_messages(server, project, filter)
-        ESCollector.send_messages(server, project, messages, 1)
+        ESCollector.extract_users(messages)
+        #ESCollector.send_messages(server, project, messages, 1)
         
-def succession_dubler(dag, project):
-    with dag:
-        check = ESCollector.date_checker(project)
-        filter = ESCollector.get_filter(server, project, check)
-        messages_all = ESCollector.get_messages(server, project, filter)
-        messages_work = ESCollector.dublicates_checker(server, project, messages_all)
-        ESCollector.send_messages(server, project, messages_work, 1)
