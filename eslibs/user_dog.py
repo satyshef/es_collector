@@ -78,7 +78,7 @@ def succession_default(dag, project):
         #ESCollector.send_messages(server, project, messages, 1)
 
 def get_filepath(name):
-    current_datetime = datetime.now()
+    current_datetime = datetime.now() - timedelta(days=1)
     current_date_string = current_datetime.strftime('%Y-%m-%d')
     file_path = data_dir + name + '_' + current_date_string + '.txt'
     return file_path
