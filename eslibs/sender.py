@@ -5,6 +5,15 @@ class TelegramWorker:
     def __init__(self, bot_token) -> None:
         self.bot =  telebot.TeleBot(bot_token, parse_mode='Markdown')
 
+
+    def send_file(self, chat_id, path, description):
+        try:
+            # Открываем файл для чтения
+            with open(path, 'rb') as file:
+                self.bot.send_document(chat_id, file, caption=description)
+        except Exception as e:
+             raise ValueError(f"Произошла ошибка: {e}")
+            
     def send_text(self, chat_id, text):
         if len(text) > 4096:
            #разбиваем текст на части

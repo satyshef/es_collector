@@ -9,7 +9,7 @@ from es_collector.operators.es_operator import ESCollector
      
 server = BaseHook.get_connection('elasticsearch_host2')
 project_dir = "/opt/airflow/dags/projects/"
-
+data_dir = '/opt/airflow/dags/data/'
 def load_project(name):
     if name == "" or name == None:
         return None
@@ -65,9 +65,20 @@ def run_dag(dag, project):
 # порядок выполнения задач
 def succession_default(dag, project):
     with dag: 
+        file_path = get_filepath(project['name'])
+
         check = ESCollector.date_checker(project)
         filter = ESCollector.get_filter(server, project, check)
         messages = ESCollector.get_messages(server, project, filter)
-        ESCollector.extract_users(messages)
+        users = ESCollector.extract_users(messages)
+        save_list = ESCollector.save_list_to_file(file_path, users)
+        send_document = ESCollector.send_document(project, file_path)
+
+        check >> filter >> messages >> users >> save_list >> send_document
         #ESCollector.send_messages(server, project, messages, 1)
-        
+
+def get_filepath(name):
+    current_datetime = datetime.now()
+    current_date_string = current_datetime.strftime('%Y-%m-%d')
+    file_path = data_dir + name + '_' + current_date_string + '.txt'
+    return file_path

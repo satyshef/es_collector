@@ -1,3 +1,9 @@
 def extract_users(messages):
-    for m in messages:
-        print("MSG", m)
+    users = []
+    for msg in messages:
+        username = msg['sender']['username']
+        if (username != '') and (username not in users):
+            users.append(username)
+
+    print("USERS", users)
+    return users

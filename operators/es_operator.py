@@ -234,7 +234,25 @@ class ESCollector(BaseOperator):
 
     @task.python
     def extract_users(messages):
-        Users.extract_users(messages)
+        return Users.extract_users(messages)
+
+    @task.python
+    def save_list_to_file(filename, items):
+        if items == None:
+            raise "Empty user list"
+        
+        with open(filename, "w") as file:
+            for item in items:
+                file.write(item + "\n")
+        return True
+    
+    @task.python
+    def send_document(project, path):
+        bot_token = project['bot_token']
+        chat_id = project['chat_id']
+        bot = Sender.TelegramWorker(bot_token)
+        bot.send_file(chat_id, path, project['description'])
+
 #=================================================================================================================================
 
     def set_last_message(project, msg):
@@ -247,8 +265,10 @@ class ESCollector(BaseOperator):
 
         with open(p["path"], "w") as file:
             del p["path"]
-            json.dump(p, file, indent=4)
+            del p["name"]
+            del p["project_index"]
 
+            json.dump(p, file, indent=4)
 
     # Write to es server. Dont used
     def set_last_msg_1(server, index, filter_id, msg_id):
