@@ -14,13 +14,13 @@ class TelegramWorker:
         except Exception as e:
              raise ValueError(f"Произошла ошибка: {e}")
             
-    def send_text(self, chat_id, text):
+    def send_text(self, chat_id, text, disable_preview=True):
         if len(text) > 4096:
            #разбиваем текст на части
            for x in range(0, len(text), 4096):
-              result = self.bot.send_message(chat_id, text[x:x+4096], disable_web_page_preview=True, parse_mode='Markdown')
+              result = self.bot.send_message(chat_id, text[x:x+4096], disable_web_page_preview=disable_preview, parse_mode='Markdown')
         else:
-            result = self.bot.send_message(chat_id, text, disable_web_page_preview=True, parse_mode='Markdown')
+           result = self.bot.send_message(chat_id, text, disable_web_page_preview=disable_preview, parse_mode='Markdown')
         return result
 
     def send_videonote(self, chat_id, post):

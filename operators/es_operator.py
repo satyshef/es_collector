@@ -34,7 +34,7 @@ class ESCollector(BaseOperator):
 
 
     @task.python
-    def send_messages(server, project, messages, interval=1, check_user=False):
+    def send_messages(server, project, messages, interval=1, check_user=False, disable_preview=True):
         bot_token = project["bot_token"]
         chat_id = project["chat_id"]
         
@@ -87,7 +87,7 @@ class ESCollector(BaseOperator):
                     response = bot.send_videonote(cid, post)
                 elif text !='':
                     print("SEND TEXT", text, " TO CHAT ", cid)
-                    response = bot.send_text(cid, text)
+                    response = bot.send_text(cid, text, disable_preview)
                 else:
                     print("SEND MEDIA", post)
                     response = bot.send_media_post(cid, post)
