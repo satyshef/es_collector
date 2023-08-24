@@ -34,9 +34,10 @@ class ESCollector(BaseOperator):
 
 
     @task.python
-    def send_messages(server, project, messages, interval=1, check_user=False, disable_preview=True):
+    def send_messages(server, project, messages, interval=1, check_user=False):
         bot_token = project["bot_token"]
         chat_id = project["chat_id"]
+        disable_preview = project["disable_preview"]
         
         bot = Sender.TelegramWorker(bot_token)
         result = []
