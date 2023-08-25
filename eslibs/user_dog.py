@@ -60,8 +60,12 @@ def create_dag(project):
 def run_dag(dag, project):
     if dag == None or project == None:
         return
+    if "succession" in project:
+        succession = project["succession"]
+    else:
+        succession = "default"
 
-    if project["succession"] == "extract_phones":
+    if succession == "extract_phones":
         succession_extract_phones(dag, project)
     else:
         succession_default(dag, project)
