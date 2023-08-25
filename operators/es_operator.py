@@ -39,6 +39,8 @@ class ESCollector(BaseOperator):
         chat_id = project["chat_id"]
         if "disable_preview" in project:
             disable_preview = project["disable_preview"]
+        else:
+            disable_preview = True
         
         bot = Sender.TelegramWorker(bot_token)
         result = []
