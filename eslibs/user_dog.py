@@ -1,9 +1,11 @@
 # Скрипт сбора пользователей
-import json   
+import json
+import re
 from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.hooks.base_hook import BaseHook
+from airflow.decorators import task
 from es_collector.operators.es_operator import ESCollector
 
      
@@ -59,10 +61,14 @@ def run_dag(dag, project):
     if dag == None or project == None:
         return
 
-    succession_default(dag, project)
+    if project["succession"] == "extract_phones":
+        succession_extract_phones(dag, project)
+    else:
+        succession_default(dag, project)
+    
 
 
-# порядок выполнения задач
+# Извлечение username. сценарий по умолчанию
 def succession_default(dag, project):
     with dag: 
         file_path = get_filepath(project['name'])
@@ -70,12 +76,83 @@ def succession_default(dag, project):
         check = ESCollector.date_checker(project)
         filter = ESCollector.get_filter(server, project, check)
         messages = ESCollector.get_messages(server, project, filter)
-        users = ESCollector.extract_users(messages)
+        users = extract_users(messages)
         save_list = ESCollector.save_list_to_file(file_path, users)
         send_document = ESCollector.send_document(project, file_path)
-
         check >> filter >> messages >> users >> save_list >> send_document
-        #ESCollector.send_messages(server, project, messages, 1)
+
+
+# Извлечение username+message. Из message парсятся номера телефонов
+def succession_extract_phones(dag, project):
+    with dag: 
+        file_path = get_filepath(project['name'])
+
+        check = ESCollector.date_checker(project)
+        filter = ESCollector.get_filter(server, project, check)
+        messages = ESCollector.get_messages(server, project, filter)
+        result = extract_phone_messages(messages)
+        save_list = ESCollector.save_list_to_file(file_path, result)
+        send_document = ESCollector.send_document(project, file_path)
+
+        check >> filter >> messages >> result >> save_list >> send_document
+
+
+
+# ========================== tasks ===============================
+# Извлекаем usernames из сообщений
+@task.python
+def extract_users(messages):
+    users = []
+    for msg in messages:
+        username = msg['sender']['username']
+        if (username != '') and (username not in users):
+            users.append(username)
+
+    #print("USERS", users)
+    return users
+
+@task.python
+def extract_phone_messages(messages):
+    result = []
+    # Анализ каждого сообщения и извлечение номеров
+    for m in messages:
+        message = m['content']['text']
+        message = message.strip()
+        message = message.replace("\n", "\\n")
+
+        phone_numbers = parse_phone_numbers(message)
+        for number in phone_numbers:
+            if number != message:
+                #print(number)
+                line = number + ";" + message
+                result.append(line)
+    
+    return result
+
+# ======================== Service ===============================
+
+# извлекаем номера телефонов из текста
+def parse_phone_numbers(text):
+    
+    text = text.replace(" ", "")
+    text = text.replace(" ", "")
+    text = text.replace("-", "")
+    text = text.replace("(", "")
+    text = text.replace(")", "")
+    # Шаблон для поиска номеров телефонов
+    pattern = r'\+?\d{1,2}[-\s]?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}'
+
+    # Используем регулярное выражение для поиска номеров
+    phone_numbers = re.findall(pattern, text)
+
+    # Заменяем номера, начинающиеся с 8, на номера, начинающиеся с +7
+    formatted_numbers = []
+    for number in phone_numbers:
+        #formatted_number = re.sub(r'^\+?8', '+7', number)
+        formatted_number = re.sub(r'^\+?[78]', '+7', number)
+        formatted_numbers.append(formatted_number)
+
+    return formatted_numbers
 
 def get_filepath(name):
     current_datetime = datetime.now() - timedelta(days=1)
