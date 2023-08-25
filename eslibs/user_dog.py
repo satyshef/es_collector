@@ -9,14 +9,16 @@ from airflow.decorators import task
 from es_collector.operators.es_operator import ESCollector
 
      
-server = BaseHook.get_connection('elasticsearch_host2')
-project_dir = "/opt/airflow/dags/projects/"
-data_dir = '/opt/airflow/dags/data/'
+SERVER = BaseHook.get_connection('elasticsearch_host2')
+PROJECT_DIR = "/opt/airflow/dags/projects/"
+DATA_DIR = '/opt/airflow/dags/data/'
+RESULTFILE_EXTENSION = 'csv'
+
 def load_project(name):
     if name == "" or name == None:
         return None
 
-    path = project_dir + name + '.json'
+    path = PROJECT_DIR + name + '.json'
     try:
         with open(path, 'r') as file:
             project = json.load(file)
@@ -78,8 +80,8 @@ def succession_default(dag, project):
         file_path = get_filepath(project['name'])
 
         check = ESCollector.date_checker(project)
-        filter = ESCollector.get_filter(server, project, check)
-        messages = ESCollector.get_messages(server, project, filter)
+        filter = ESCollector.get_filter(SERVER, project, check)
+        messages = ESCollector.get_messages(SERVER, project, filter)
         users = extract_users(messages)
         save_list = ESCollector.save_list_to_file(file_path, users)
         send_document = ESCollector.send_document(project, file_path)
@@ -92,8 +94,8 @@ def succession_extract_phones(dag, project):
         file_path = get_filepath(project['name'])
 
         check = ESCollector.date_checker(project)
-        filter = ESCollector.get_filter(server, project, check)
-        messages = ESCollector.get_messages(server, project, filter)
+        filter = ESCollector.get_filter(SERVER, project, check)
+        messages = ESCollector.get_messages(SERVER, project, filter)
         result = extract_phone_messages(messages)
         save_list = ESCollector.save_list_to_file(file_path, result)
         send_document = ESCollector.send_document(project, file_path)
@@ -161,5 +163,5 @@ def parse_phone_numbers(text):
 def get_filepath(name):
     current_datetime = datetime.now() - timedelta(days=1)
     current_date_string = current_datetime.strftime('%Y-%m-%d')
-    file_path = data_dir + name + '_' + current_date_string + '.txt'
+    file_path = DATA_DIR + name + '_' + current_date_string + '.' + RESULTFILE_EXTENSION
     return file_path
