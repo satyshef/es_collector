@@ -221,6 +221,7 @@ class ESCollector(BaseOperator):
     
     @task.python
     def dublicates_checker(server, project, messages):
+        ##
         result = []
         for msg in messages:
             last_msg = msg
