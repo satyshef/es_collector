@@ -7,9 +7,20 @@ from airflow.hooks.base_hook import BaseHook
 
 #import es_collector.eslibs.contented as Contented   
      
-project_dir = "/opt/airflow/dags/projects/"
+DIRS = [
+    "/opt/airflow/dags/projects/",
+    "/opt/airflow/projects/"
+]
 
-def load_project(name):
+def load_project(*args):
+    
+    if len(args) > 0:
+        name = args[0]
+    if len(args) > 1:
+        project_dir = DIRS[args[1]]
+    else:
+        project_dir = DIRS[0]
+
     if name == "" or name == None:
         return None
 
