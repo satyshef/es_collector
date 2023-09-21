@@ -1,3 +1,5 @@
+# ACTUAL
+# Переименовать в telegram
 import telebot
 import requests
 
@@ -35,11 +37,19 @@ class TelegramWorker:
 
     def send_media_post(self, chat_id, post):
         media = []
-        for image_file in post['foto_link']:
+        for link in post['foto_link']:
+            if is_remote_addr(link):
+                image_file = link
+            else:
+                image_file = open(link, 'rb')
             img = telebot.types.InputMediaPhoto(image_file)
             media.append(img)
 
-        for video_file in post['video_link']:
+        for link in post['video_link']:
+            if is_remote_addr(link):
+                video_file = link
+            else:
+                video_file = open(link, 'rb')
             vid = telebot.types.InputMediaVideo(video_file)
             media.append(vid)
 
@@ -64,33 +74,8 @@ class TelegramWorker:
         else:
             media[0].caption = text
             media[0].parse_mode = 'Markdown'
-            return self.bot.send_media_group(chat_id, media)
+            return self.bot.send_media_group(chat_id, media, timeout = 60)
 
-''''
-       # список объектов с параметрами для каждой картинки
-       if post['text'] != None:
-          caption = post['text']
 
-       media = []
-       for image_file in post['foto_link']:
-          if len(media)==0 and caption != None:
-              img = telebot.types.InputMediaPhoto(media=image_file, caption=caption, parse_mode='Markdown')
-          else:
-              img = telebot.types.InputMediaPhoto(image_file)
-          media.append(img)
-
-       for video_file in post['video_link']:
-          if len(media)==0 and caption != None:
-              vid = telebot.types.InputMediaVideo(media=video_file, caption=caption, parse_mode='Markdown')
-          else:
-              vid = telebot.types.InputMediaVideo(video_file)
-          media.append(vid)
-       #print("MEDIA ", media)
-       if len(media) == 0:
-           if caption != None:
-               print("Send text instead of media")
-               return self.send_text(chat_id, caption)
-           else:
-               raise ValueError('Media is empty')
-       return self.bot.send_media_group(chat_id, media)
-'''''
+def is_remote_addr(url):
+    return url.startswith('http://') or url.startswith('https://')
