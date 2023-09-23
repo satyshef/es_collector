@@ -1,3 +1,4 @@
+# Под удаление
 # Скрипт сбора сообщений
 import json   
 from datetime import datetime, timedelta

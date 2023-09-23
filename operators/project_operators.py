@@ -70,3 +70,27 @@ def get_filter(es, project, checked):
     print(filter)
     return filter
 
+
+# Загружаем сообщения проекта из ES
+@task.python
+def get_messages(es, project, query):
+    if query == None:
+        raise ValueError("Empty Query")
+    result = es.search(index=project["index"], body=query)
+    if len(result["hits"]["hits"]) == 0:
+        #raise ValueError('Messages %s not found' % project["filter_name"])
+        print('Messages %s not found' % project["filter_name"])
+        raise AirflowSkipException
+    sources = result["hits"]["hits"]
+    result = []
+    for s in sources:
+        if 'content' not in s['_source']:
+            print('Empty content')
+            continue
+        post = s['_source']
+        # Если поле text не существует то присваевыем ему ''
+        if 'text' not in post['content']:
+            post['content']['text'] = ''
+        result.append(post)
+
+    return result

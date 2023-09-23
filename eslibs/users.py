@@ -1,4 +1,4 @@
-# ACTUAL
+# Под удаление. Использется в es_operator
 def extract_users(messages):
     users = []
     for msg in messages:

@@ -28,3 +28,51 @@ def save_doc(es, index, post):
         return True
     except exceptions.ConflictError:
         return False
+    
+
+# by_text - поиск текста
+# by_user - учитывать id пользователя (Sender.id)
+def search_message(es, index, message, by_text=True, by_user=True):
+    must = []
+
+    if by_text:
+        text = message["content"]["text"]
+        if text != None and text != '':
+            q ={
+                "match_phrase": {
+                    "content.text": text
+                }
+            }
+            must.append(q)
+
+    if by_user:
+        user_id = message["sender"]["id"]
+        if user_id != None and user_id != '':
+            q ={
+                "term": {
+                    "sender.id": user_id
+                }
+            }
+            must.append(q)
+
+    if len(must) == 0:
+        return None      
+    
+    query = {
+        "query": {
+            "bool": {
+                "must": must
+            }
+        }
+    }
+        
+    # Ищем документ в пользовательском индексе
+    try:
+        result = es.search(index=index, body=query)
+    except exceptions.NotFoundError:
+        return None
+
+    if result == None or len(result["hits"]["hits"]) == 0:
+        return None
+    return result["hits"]["hits"][0]
+    

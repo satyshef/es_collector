@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-def save_last_message(project, msg):
+def save_last_message_time(project, msg):
     # Копируем обьект что бы не изменять оригинал
     p = project.copy()
     p["search_after"] = msg["time"]
