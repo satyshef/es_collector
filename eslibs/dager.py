@@ -40,6 +40,9 @@ def load_project(*args):
         if "project_index" not in project:
             project["project_index"] = "project_" + name
 
+        if "dag_id" not in project:
+            project['dag_id'] = name
+            
         return project
     except FileNotFoundError:
         print("Ошибка: Файл не найден.", path)
