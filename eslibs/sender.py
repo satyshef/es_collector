@@ -12,7 +12,7 @@ class TelegramWorker:
         try:
             # Открываем файл для чтения
             with open(path, 'rb') as file:
-                self.bot.send_document(chat_id, file, caption=description)
+                self.bot.send_document(chat_id, file, caption=description, timeout = 60)
         except Exception as e:
              raise ValueError(f"Произошла ошибка: {e}")
             
@@ -22,7 +22,7 @@ class TelegramWorker:
            for x in range(0, len(text), 4096):
               result = self.bot.send_message(chat_id, text[x:x+4096], disable_web_page_preview=disable_preview, parse_mode='Markdown')
         else:
-           result = self.bot.send_message(chat_id, text, disable_web_page_preview=disable_preview, parse_mode='Markdown')
+           result = self.bot.send_message(chat_id, text, disable_web_page_preview=disable_preview, parse_mode='Markdown', timeout = 60)
         return result
 
     def send_videonote(self, chat_id, post):
@@ -33,7 +33,7 @@ class TelegramWorker:
         #media.append(vid)
         data = requests.get(url).content
         #return None
-        return self.bot.send_video_note(chat_id, data)
+        return self.bot.send_video_note(chat_id, data, timeout = 60)
 
     def send_media_post(self, chat_id, post):
         media = []
