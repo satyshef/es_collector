@@ -24,7 +24,7 @@ def prepare_demo1_post(source):
     text = prepare_markdown(text)
     if text == '':
         print('Empty text')
-        return ''
+        return None
 
     #chatLink = generate_link(source["location"])
     chatName = source["location"]["first_name"]
@@ -63,7 +63,7 @@ def prepare_template1_post(source):
     text = prepare_markdown(text)
     if text == '':
         print('Empty text')
-        return ''
+        return None
     
     chatLink = generate_link(source["location"])
     chatName = source["location"]["first_name"]
@@ -102,7 +102,7 @@ def prepare_template2_post(source):
     text = prepare_markdown(text)
     if text == '':
         print('Empty text')
-        return ''
+        return None
     
     chatLink = generate_link(source["location"])
     chatName = source["location"]["first_name"]
@@ -139,7 +139,7 @@ def prepare_template3_post(source):
     text = prepare_markdown(text)
     if text == '':
         print('Empty text')
-        return ''
+        return None
 
     chatName = source["location"]["first_name"]
     chatName = re.sub(r'\[|\]', '', chatName)

@@ -42,7 +42,7 @@ def send_messages(es, project, messages, interval=1):
             print('Post is empty')
             continue
         
-        #print("POST", post)
+        print("POST", post)
         text = ''
         if post['type']=='text':
             if 'text' in post:
