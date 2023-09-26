@@ -7,11 +7,14 @@ import es_collector.eslibs.sender as Sender
 import es_collector.eslibs.project as Prolib
 import es_collector.eslibs.contented as Contented
 import es_collector.eslibs.es as Eslib
+import es_collector.eslibs.es as Elastic
 
 @task.python
-def send_messages(es, project, messages, interval=1):
+def send_messages(server, project, messages, interval=1):
     bot_token = project["bot_token"]
     chat_id = project["chat_id"]
+    es = Elastic.New(server)
+
     if "disable_preview" in project:
         disable_preview = project["disable_preview"]
     else:
@@ -72,8 +75,8 @@ def send_messages(es, project, messages, interval=1):
 
 
 @task.python
-def dublicates_checker(es, project, messages):
-    ##
+def dublicates_checker(server, project, messages):
+    es = Elastic.New(server)
     result = []
     for msg in messages:
         last_msg = msg

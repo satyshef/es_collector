@@ -15,7 +15,6 @@ DATA_DIR = '/opt/airflow/data/'
 RESULTFILE_EXTENSION = 'csv'
 
 server = BaseHook.get_connection('elasticsearch_host2')
-es = Elastic.New(server)
 
 def run_dag(dag, project):
     if dag == None or project == None:
@@ -38,12 +37,13 @@ def succession_default(dag, project):
         result_file = get_filepath(project['name'])
 
         check = Project.check_actual(project)
-        filter = Project.get_filter(es, project, check)
-        messages = Project.get_messages(es, project, filter)
+        filter = Project.get_filter(server, project, check)
+        messages = Project.get_messages(server, project, filter)
         users = User.extract_usernames(messages)
         save_list = OS.save_list_to_file(result_file, users)
         send_document = User.send_file_with_description(project, result_file)
-        check >> filter >> messages >> users >> save_list >> send_document
+        #check >> filter >> messages >> users >> 
+        save_list >> send_document
 
 
 # Извлечение username+message. Из message парсятся номера телефонов
@@ -52,13 +52,14 @@ def succession_extract_phones(dag, project):
         file_path = get_filepath(project['name'])
 
         check = Project.check_actual(project)
-        filter = Project.get_filter(es, project, check)
-        messages = Project.get_messages(es, project, filter)
+        filter = Project.get_filter(server, project, check)
+        messages = Project.get_messages(server, project, filter)
         result = User.extract_phone_messages(messages)
         save_list = OS.save_list_to_file(file_path, result)
         send_document = User.send_file_with_description(project, file_path)
 
-        check >> filter >> messages >> result >> save_list >> send_document
+        #check >> filter >> messages >> result >> 
+        save_list >> send_document
 
 
 # ======================== Service ===============================

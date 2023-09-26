@@ -8,14 +8,12 @@ from elasticsearch import exceptions
 import es_collector.eslibs.project as Prolib  
 import es_collector.eslibs.es as Eslib
 import es_collector.eslibs.sender as Sender  
-
-#import es_collector.eslibs.contented as Contented   
-     
-
+import es_collector.eslibs.es as Elastic
 
 
 @task.python
-def check_dublicates_movies(es, project, movies):
+def check_dublicates_movies(server, project, movies):
+    es = Elastic.New(server)
     result = []
     for movie in movies:
         name = movie["_source"]["name"]
@@ -41,9 +39,10 @@ def check_dublicates_movies(es, project, movies):
     return result
 
 @task.python
-def get_movies(es, project, query):
+def get_movies(server, project, query):
       if query == None:
           raise ValueError("Empty Query")
+      es = Elastic.New(server)
       result = es.search(index=project["index"], body=query)
       if len(result["hits"]["hits"]) == 0:
           #raise ValueError('Messages %s not found' % project["filter_name"])
@@ -74,9 +73,11 @@ def prepare_messages(movies):
       return result
 
 @task.python
-def send_messages(es, project, messages, interval=1):
+def send_messages(server, project, messages, interval=1):
         bot_token = project["bot_token"]
         chat_id = project["chat_id"]
+        es = Elastic.New(server)
+        
         if "disable_preview" in project:
             disable_preview = project["disable_preview"]
         else:

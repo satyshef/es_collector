@@ -6,6 +6,8 @@ import es_collector.eslibs.sender as Sender
 from airflow.decorators import task
 from airflow.exceptions import AirflowSkipException
 
+import es_collector.eslibs.es as Elastic
+
 ADVANCE_WARNING = 24
 
 # Проверяем время актуальности задачи пользователя. Если задача не актуальна отправляем уведомление
@@ -41,10 +43,10 @@ def check_actual(project):
 # Загружаем поисковый запрос пользователя
 # checked ??? - результат проверки актуальности проекта. Нужен для того что бы дождаться результата date_ckecker
 @task.python
-def get_filter(es, project, checked):
+def get_filter(server, project, checked):
     if checked != True:
         raise AirflowSkipException
-    
+
     query = {
         "query": {
                 "term": {
@@ -52,6 +54,8 @@ def get_filter(es, project, checked):
                 }
         }
     }
+    
+    es = Elastic.New(server)
     result = es.search(index=project["filter_index"], body=query)
     if len(result["hits"]["hits"]) == 0:
         raise ValueError('Filter %s not found' % project["filter_name"])
@@ -73,9 +77,10 @@ def get_filter(es, project, checked):
 
 # Загружаем сообщения проекта из ES
 @task.python
-def get_messages(es, project, query):
+def get_messages(server, project, query):
     if query == None:
         raise ValueError("Empty Query")
+    es = Elastic.New(server)
     result = es.search(index=project["index"], body=query)
     if len(result["hits"]["hits"]) == 0:
         #raise ValueError('Messages %s not found' % project["filter_name"])

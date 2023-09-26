@@ -76,3 +76,34 @@ def search_message(es, index, message, by_text=True, by_user=True):
         return None
     return result["hits"]["hits"][0]
     
+
+
+def search_link(es, index, link):
+    if link == '':
+        raise ValueError("Link dont set")
+    
+    must = [
+        {
+            "match": {
+                "address": link
+            }
+        } 
+    ]
+    
+    query = {
+        "query": {
+            "bool": {
+                "must": must
+            }
+        }
+    }
+    
+    try:
+        result = es.search(index=index, body=query)
+    except exceptions.NotFoundError:
+        return None
+
+    if result == None or len(result["hits"]["hits"]) == 0:
+        return None
+    return result["hits"]["hits"][0]
+    

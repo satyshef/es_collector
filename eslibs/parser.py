@@ -11,8 +11,6 @@ def parse_phone_numbers(text):
     text = text.replace(")", "")
     # Шаблон для поиска номеров телефонов
     pattern = r'\+?\d{1,2}[-\s]?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}'
-
-    # Используем регулярное выражение для поиска номеров
     phone_numbers = re.findall(pattern, text)
 
     # Заменяем номера, начинающиеся с 8, на номера, начинающиеся с +7
@@ -23,3 +21,42 @@ def parse_phone_numbers(text):
         formatted_numbers.append(formatted_number)
 
     return formatted_numbers
+
+def parse_tglinks(text):
+    links = []
+    source_links = extract_tglinks(text)
+    for link in source_links:
+
+        link = link.lower()
+        if link.startswith("@"):
+            #link = link.replace("@", '')
+            links.append(link)
+            continue
+
+        link = link.replace("https://", '')
+        link = link.replace("http://", '')
+        segments = link.split("/")
+
+        if len(segments)<2:
+            continue
+
+        if segments[1].startswith("+") or len(segments[1]) < 5:
+            continue
+        
+        links.append("@" + segments[1])
+
+    return links
+
+
+def extract_tglinks(text):
+    pattern = r'https?://(?:t\.me/[\w/]+|@[\w_]+)|@[\w_]+'
+    links = re.findall(pattern, text)
+    return links
+
+
+def unique_list(lst):
+    unique_list = []
+    for item in lst:
+        if item not in unique_list:
+            unique_list.append(item)
+    return unique_list

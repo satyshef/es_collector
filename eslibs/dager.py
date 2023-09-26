@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.hooks.base_hook import BaseHook
+#from airflow.hooks.base_hook import BaseHook
 
 #import es_collector.eslibs.contented as Contented   
      
