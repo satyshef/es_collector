@@ -9,12 +9,12 @@ def save_last_message_time(project, msg):
     p['end_date'] = p['end_date'].strftime("%Y-%m-%d %H:%M:%S")
     p['interval'] = int(p['interval'].total_seconds() / 60)
 
-    with open(p["path"], "w") as file:
+    with open(p["path"], "w", encoding='utf-8') as file:
         del p["path"]
         del p["name"]
         del p["project_index"]
 
-        json.dump(p, file, indent=4)
+        json.dump(p, file, indent=4, ensure_ascii=False)
 
 
 def current_date():

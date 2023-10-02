@@ -162,11 +162,12 @@ def prepare_template3_post(source):
     post["text"] = result
     return post
 
-def prepare_template4_post(source):
+# изображение - ссылка на пост -- текст
+def prepare_post_chan_basic(project, source):
     if source["content"] == None:
         print("None content")
         return None
-  
+    
     post = source["content"].copy()
     postLink = "[%s](%s)" % (source["location"]["first_name"], source["content"]["link"])
     parser = webparser.TelegramParser(post['link'])
@@ -182,12 +183,16 @@ def prepare_template4_post(source):
     # if post['text'] == '':
     #     text = parser.get_text()
     # else:
-
-    text = post['text']
-    if text != '':
-        text = prepare_markdown(text)
-        text = "🟢 %s \n \n%s" % (postLink, text)
+ 
+    if post['text'] != '':
+        text = prepare_markdown(post['text'])
+        # пользовательские замены текста
+        if "text_regex_patterns" in project and len(project["text_regex_patterns"]) > 0:
+            for pattern, replace in project["text_regex_patterns"].items():
+                text = re.sub(pattern, replace, text)
+        text = "%s%s \n \n%s%s%s" % (project['before_post'], postLink, project['before_text'], text, project['after_text'])
         post['text'] = text
+
     return post
 
 def prepare_forward_media(source):
@@ -234,9 +239,6 @@ def prepare_forward_post(source):
     if post['text'] != '':
         post['text'] = prepare_markdown(post['text'])
     return post
-
-
-
 
 
 def prepare_user(user, tags):

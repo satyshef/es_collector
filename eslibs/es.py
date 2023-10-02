@@ -107,3 +107,11 @@ def search_link(es, index, link):
         return None
     return result["hits"]["hits"][0]
     
+# Check dublicates
+def is_dublicate(es, project, msg):
+    print("IS DUBLE")
+    if "check_double_text" in project or  "check_double_user" in project:
+        if search_message(es, project["project_index"], msg, project["check_double_text"], project["check_double_user"]) != None:
+            return True
+
+    return False

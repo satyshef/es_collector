@@ -22,14 +22,6 @@ def succession_default(dag, project):
         filter = Project.get_filter(server, project, check)
         messages = Project.get_messages(server, project, filter)
         Message.send_messages(server, project, messages, 1)
-
-# порядок выполнения задач
-def __succession_default(dag, project):
-    with dag: 
-        check = Project.check_actual(project)
-        filter = Project.get_filter(server, project, check)
-        messages = Project.get_messages(server, project, filter)
-        Message.send_messages(server, project, messages, 1)
         
 def succession_dubler(dag, project):
     with dag:

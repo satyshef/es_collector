@@ -26,13 +26,16 @@ def send_messages(server, project, messages, interval=1):
     for msg in messages:
         Prolib.save_last_message_time(project, msg)
         # Check dublicates
-        if "check_double_text" in project or  "check_double_user" in project:
-            if Eslib.search_message(es, project["project_index"], msg, project["check_double_text"], project["check_double_user"]) != None:
-                continue
+        if Eslib.is_dublicate(es, project, msg) == True:
+            continue
 
-        if "text_regex_patterns" in project and len(project["text_regex_patterns"]) > 0:
-                for pattern, replace in project["text_regex_patterns"].items():
-                    msg["content"]["text"] = re.sub(pattern, replace, msg["content"]["text"])
+        #if "check_double_text" in project or  "check_double_user" in project:
+        #    if Eslib.search_message(es, project["project_index"], msg, project["check_double_text"], project["check_double_user"]) != None:
+        #        continue
+        
+        #if "text_regex_patterns" in project and len(project["text_regex_patterns"]) > 0:
+        #        for pattern, replace in project["text_regex_patterns"].items():
+        #            msg["content"]["text"] = re.sub(pattern, replace, msg["content"]["text"])
 
         if project["post_template"] == 'template_1':
             post = Contented.prepare_template1_post(msg)
@@ -40,8 +43,8 @@ def send_messages(server, project, messages, interval=1):
             post = Contented.prepare_template2_post(msg)
         elif project["post_template"] == 'template_3':
             post = Contented.prepare_template3_post(msg)
-        elif project["post_template"] == 'template_4':
-            post = Contented.prepare_template4_post(msg)
+        elif project["post_template"] == 'chan_basic':
+            post = Contented.prepare_post_chan_basic(project, msg)
         elif project["post_template"] == 'demo_1':
             post = Contented.prepare_demo1_post(msg)
         elif project["post_template"] == 'forward_media':
