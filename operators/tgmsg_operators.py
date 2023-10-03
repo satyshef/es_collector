@@ -28,7 +28,7 @@ def send_messages(server, project, messages, interval=1):
         # Check dublicate
         if Eslib.is_dublicate(es, project, msg) == True:
             continue
-        # text preprocessor
+        # text preprocessing
         if Contented.handle_post_text(project, msg) == False:
             continue
             
@@ -53,7 +53,7 @@ def send_messages(server, project, messages, interval=1):
         elif project["post_template"] == 'forward_media':
             post = Contented.prepare_forward_media(msg)
         else:
-            post = Contented.prepare_post_forward(project, msg)
+            post = Contented.prepare_post_forward(msg)
 
 
         # Если post_type == 'information_1' и при этом текст отсутствует тогда post == None
