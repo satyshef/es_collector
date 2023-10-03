@@ -1,6 +1,52 @@
 # ACTUAL
 import re
+import requests
+
 import es_collector.eslibs.webparser as webparser
+import es_collector.eslibs.parser as parser
+
+#====================================== Шаблоны ======================================    
+# изображение - ссылка на пост -- текст
+def prepare_post_chan_basic(project, source):
+    if source["content"] == None:
+        print("None content")
+        return None
+    
+    post = source["content"].copy()
+    postLink = "[%s](%s)" % (source["location"]["first_name"], source["content"]["link"])
+   
+    if post['type'] == 'videonote':
+        post['video_link'] = parser.get_videonote()
+        return post
+    
+    # FULL POST
+    get_post_images(post)
+    get_post_videos(post)
+    get_post_text(project, post)
+    #post['text'] = prepare_markdown(post['text'])
+    #apply_user_patterns(project, post)
+    post['text'] = "%s%s \n \n%s%s%s" % (project['before_post'], postLink, project['before_text'], post['text'], project['after_text'])
+
+    return post
+
+
+def prepare_post_forward(project, source):
+    if source["content"] == None:
+        print("None content")
+        return None
+    post = source["content"].copy()
+    
+    if post['type'] == 'videonote':
+        wp = webparser.TelegramParser(post['link'])
+        post['video_link'] = wp.get_videonote()
+        return post
+    # FULL POST
+    get_post_images(post)
+    get_post_videos(post)
+    get_post_text(project, post)
+    return post
+
+#=====================================================================================  
 
 def generate_link(destination):
         if destination["type"] == "user":
@@ -12,6 +58,110 @@ def generate_link(destination):
             if destination["username"] != "":
                 return "https://t.me/%s" % destination["username"]
             return "https://t.me/c/%d" % destination["id"] 
+
+
+def prepare_user(user, tags):
+    user = {
+        'first_name' : user['first_name'],
+        'last_name' : user['last_name'],
+        'username' : user['username'],
+        'phone' : user['phone'],
+        'tags' : tags,
+        #'link' : source['content']['link']
+        #source['location']['first_name']
+    }
+    return user
+
+def prepare_markdown(text):
+    if text == '':
+        return ''
+    text = text.strip()
+    text = text.replace('**__', '_')
+    text = text.replace('__**', '_')
+    text = text.replace('__', '_')
+    text = text.replace('**', '*')
+    text = text.replace('[*', '[')
+    text = text.replace('*]', ']')
+
+    #Проверяем парность форматирующих символов, если не четное количество тогда все удаляем
+    if text.count("*") % 2 != 0:
+        text = text.replace('*', '')
+    if text.count("_") % 2 != 0:
+        text = text.replace('_', '')
+    if text.count("~") % 2 != 0:
+        text = text.replace('~', '')
+
+    result = ''
+    for i in range(len(text)):
+        is_formating = is_formatting_char(text, i)
+        if is_formating != None and is_formating == False:
+            result += "\\"
+        result += text[i]
+
+    text = text.replace('\n', ' \n')
+    return text.strip()
+
+# Проверка, что символ окружен другими символами или находится в начале или конце строки
+def is_formatting_char(text, index):
+    if text[index] != '*' and text[index] != '_' and text[index] != '~':
+        return None
+
+    if index == 0 or index == len(text) - 1:
+        return True
+    
+    if text[index - 1] == ' ' or text[index + 1] == ' ' or text[index - 1] == '\n' or text[index + 1] == '\n':
+        return True
+    
+    return False
+
+def get_post_text(project, post):
+    if post['text'] == '':
+        post['text'] = parser.get_text()
+        if post['text'] == '':
+            return
+        
+    post['text'] = prepare_markdown(post['text'])
+    if "text_regex_patterns" in project and len(project["text_regex_patterns"]) > 0:
+        apply_patterns(post, project["text_regex_patterns"])
+
+
+def get_post_images(post):
+    wp = webparser.TelegramParser(post['link'])
+    links = wp.get_img_links()
+    # если нет изображения, ищем ссылку в тексте
+    if len(links) == 0:
+        lnk = parser.extract_links(post['text'])
+        if len(lnk) == 0:
+            return
+        links = []
+        for link in lnk:
+            if is_image_url(link):
+                links.append(link)
+        
+    post["foto_link"] = links
+    post["type"] = "photo"
+
+
+def get_post_videos(post):
+    wp = webparser.TelegramParser(post['link'])
+    post["video_link"] = wp.get_video_links()
+
+
+# пользовательские замены текста
+def apply_patterns(post, patterns):
+    if post['text'] != '':  
+        for pattern, replace in patterns.items():
+            post['text'] = re.sub(pattern, replace, post['text'])
+
+
+# нужно решить в какой модуль ее перенести
+def is_image_url(url):
+    response = requests.head(url)
+    content_type = response.headers.get('content-type')
+    return content_type is not None and content_type.startswith('image/')
+
+
+# ======================================= старые шаблоны под удаление ====================================
 
 def prepare_demo1_post(source):
     if source["content"] == None:
@@ -162,38 +312,6 @@ def prepare_template3_post(source):
     post["text"] = result
     return post
 
-# изображение - ссылка на пост -- текст
-def prepare_post_chan_basic(project, source):
-    if source["content"] == None:
-        print("None content")
-        return None
-    
-    post = source["content"].copy()
-    postLink = "[%s](%s)" % (source["location"]["first_name"], source["content"]["link"])
-    parser = webparser.TelegramParser(post['link'])
-  
-    if post['type'] == 'videonote':
-        post['video_link'] = parser.get_videonote()
-        return post
-    # FULL POST
-    post["foto_link"] = parser.get_img_links()
-    post["video_link"] = parser.get_video_links()
-
-    #if 'text' not in post or not post['text']:
-    # if post['text'] == '':
-    #     text = parser.get_text()
-    # else:
- 
-    if post['text'] != '':
-        text = prepare_markdown(post['text'])
-        # пользовательские замены текста
-        if "text_regex_patterns" in project and len(project["text_regex_patterns"]) > 0:
-            for pattern, replace in project["text_regex_patterns"].items():
-                text = re.sub(pattern, replace, text)
-        text = "%s%s \n \n%s%s%s" % (project['before_post'], postLink, project['before_text'], text, project['after_text'])
-        post['text'] = text
-
-    return post
 
 def prepare_forward_media(source):
     if source["content"] == None:
@@ -211,86 +329,4 @@ def prepare_forward_media(source):
     return post
 
 
-def prepare_forward_post(source):
-    if source["content"] == None:
-        print("None content")
-        return None
-    post = source["content"]
-    parser = webparser.TelegramParser(post['link'])
-    # print("PARSER", parser.soup)
-    # return None
-    if post['type'] == 'videonote':
-        post['video_link'] = parser.get_videonote()
-        return post
-    # FULL POST
-    #url = post["link"] + "?embed=1&mode=tme"
-    
-    post["foto_link"] = parser.get_img_links()
-    post["video_link"] = parser.get_video_links()
-    # response = requests.get(url)
-    # soup = BeautifulSoup(response.content, 'html.parser')
-    # post["foto_link"] = Webparser.parse_img_links(soup)
-    # post["video_link"] = Webparser.parse_video_links(soup)
 
-    #if 'text' not in post or not post['text']:
-    if post['text'] == '':
-        post['text'] = parser.get_text()
-    
-    if post['text'] != '':
-        post['text'] = prepare_markdown(post['text'])
-    return post
-
-
-def prepare_user(user, tags):
-    user = {
-        'first_name' : user['first_name'],
-        'last_name' : user['last_name'],
-        'username' : user['username'],
-        'phone' : user['phone'],
-        'tags' : tags,
-        #'link' : source['content']['link']
-        #source['location']['first_name']
-    }
-    return user
-
-def prepare_markdown(text):
-    if text == '':
-        return ''
-    text = text.strip()
-    text = text.replace('**__', '_')
-    text = text.replace('__**', '_')
-    text = text.replace('__', '_')
-    text = text.replace('**', '*')
-    text = text.replace('[*', '[')
-    text = text.replace('*]', ']')
-
-    #Проверяем парность форматирующих символов, если не четное количество тогда все удаляем
-    if text.count("*") % 2 != 0:
-        text = text.replace('*', '')
-    if text.count("_") % 2 != 0:
-        text = text.replace('_', '')
-    if text.count("~") % 2 != 0:
-        text = text.replace('~', '')
-
-    result = ''
-    for i in range(len(text)):
-        is_formating = is_formatting_char(text, i)
-        if is_formating != None and is_formating == False:
-            result += "\\"
-        result += text[i]
-
-    text = text.replace('\n', ' \n')
-    return text.strip()
-
-# Проверка, что символ окружен другими символами или находится в начале или конце строки
-def is_formatting_char(text, index):
-    if text[index] != '*' and text[index] != '_' and text[index] != '~':
-        return None
-
-    if index == 0 or index == len(text) - 1:
-        return True
-    
-    if text[index - 1] == ' ' or text[index + 1] == ' ' or text[index - 1] == '\n' or text[index + 1] == '\n':
-        return True
-    
-    return False

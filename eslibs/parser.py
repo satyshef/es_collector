@@ -53,6 +53,15 @@ def extract_tglinks(text):
     links = re.findall(pattern, text)
     return links
 
+def extract_links(text):
+    #pattern = r'\[([^\]]+)\]\(([^)]+)\)|http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    pattern = r'\((http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)\)'
+
+
+    links = re.findall(pattern, text)
+    return links
+
+
 
 def unique_list(lst):
     unique_list = []

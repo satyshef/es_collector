@@ -50,7 +50,7 @@ def send_messages(server, project, messages, interval=1):
         elif project["post_template"] == 'forward_media':
             post = Contented.prepare_forward_media(msg)
         else:
-            post = Contented.prepare_forward_post(msg)
+            post = Contented.prepare_post_forward(project, msg)
 
         # Если post_type == 'information_1' и при этом текст отсутствует тогда post == None
         if post == None:
