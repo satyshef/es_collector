@@ -25,10 +25,13 @@ def send_messages(server, project, messages, interval=1):
     result = []
     for msg in messages:
         Prolib.save_last_message_time(project, msg)
-        # Check dublicates
+        # Check dublicate
         if Eslib.is_dublicate(es, project, msg) == True:
             continue
-
+        # text preprocessor
+        if Contented.handle_post_text(project, msg) == False:
+            continue
+            
         #if "check_double_text" in project or  "check_double_user" in project:
         #    if Eslib.search_message(es, project["project_index"], msg, project["check_double_text"], project["check_double_user"]) != None:
         #        continue
@@ -51,6 +54,7 @@ def send_messages(server, project, messages, interval=1):
             post = Contented.prepare_forward_media(msg)
         else:
             post = Contented.prepare_post_forward(project, msg)
+
 
         # Если post_type == 'information_1' и при этом текст отсутствует тогда post == None
         if post == None:
@@ -121,3 +125,6 @@ def prepare_messages(server, project, messages):
             #ESCollector.set_last_msg(server, project["filter_index"], project["filter_name"], last_msg)
         raise AirflowSkipException
     return result
+
+    
+

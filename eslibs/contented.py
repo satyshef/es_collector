@@ -22,7 +22,7 @@ def prepare_post_chan_basic(project, source):
     # FULL POST
     get_post_images(post)
     get_post_videos(post)
-    get_post_text(project, post)
+    #get_post_text(project, post)
     #post['text'] = prepare_markdown(post['text'])
     #apply_user_patterns(project, post)
     post['text'] = "%s%s \n \n%s%s%s" % (project['before_post'], postLink, project['before_text'], post['text'], project['after_text'])
@@ -30,7 +30,7 @@ def prepare_post_chan_basic(project, source):
     return post
 
 
-def prepare_post_forward(project, source):
+def prepare_post_forward(source):
     if source["content"] == None:
         print("None content")
         return None
@@ -43,7 +43,7 @@ def prepare_post_forward(project, source):
     # FULL POST
     get_post_images(post)
     get_post_videos(post)
-    get_post_text(project, post)
+    #get_post_text(project, post)
     return post
 
 #=====================================================================================  
@@ -114,15 +114,30 @@ def is_formatting_char(text, index):
     
     return False
 
-def get_post_text(project, post):
-    if post['text'] == '':
-        post['text'] = parser.get_text()
-        if post['text'] == '':
-            return
-        
-    post['text'] = prepare_markdown(post['text'])
+# предобработка текста
+def handle_post_text(project, msg):
+    if msg['content']['text'] == '':
+        wp = webparser.TelegramParser(msg['content']['link'])
+        msg['content']['text'] = wp.get_text()
+        if msg['content']['text'] == '':
+             if msg['content']['type'] == 'text':
+                 return False
+             return True
+    
+
+    # проверяем количество ссылок в тексте
+    if 'max_links' in project and project['max_links'] >= 0:
+        links = parser.extract_links(msg["content"]["text"])
+        print("LINKS : ", len(links))
+        if len(links) > project['max_links']:
+            print("MAX LINKS")
+            return False
+   
+    
+    msg['content']['text'] = prepare_markdown(msg['content']['text'])
     if "text_regex_patterns" in project and len(project["text_regex_patterns"]) > 0:
-        apply_patterns(post, project["text_regex_patterns"])
+        apply_patterns(msg['content'], project["text_regex_patterns"])
+    return True
 
 
 def get_post_images(post):
@@ -148,6 +163,7 @@ def get_post_videos(post):
 
 
 # пользовательские замены текста
+# передаем словарь content чтобы изменения происходили внутри функции
 def apply_patterns(post, patterns):
     if post['text'] != '':  
         for pattern, replace in patterns.items():

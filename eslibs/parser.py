@@ -54,6 +54,8 @@ def extract_tglinks(text):
     return links
 
 def extract_links(text):
+    if text == "":
+        return []
     #pattern = r'\[([^\]]+)\]\(([^)]+)\)|http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     pattern = r'\((http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)\)'
 
