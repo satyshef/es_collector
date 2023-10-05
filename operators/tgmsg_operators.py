@@ -46,12 +46,14 @@ def send_messages(server, project, messages, interval=1):
             post = Contented.prepare_template2_post(msg)
         elif project["post_template"] == 'template_3':
             post = Contented.prepare_template3_post(msg)
-        elif project["post_template"] == 'chan_basic':
-            post = Contented.prepare_post_chan_basic(project, msg)
         elif project["post_template"] == 'demo_1':
             post = Contented.prepare_demo1_post(msg)
         elif project["post_template"] == 'forward_media':
             post = Contented.prepare_forward_media(msg)
+        elif project["post_template"] == 'chan_basic':
+            post = Contented.prepare_post_chan_basic(project, msg)
+        elif project["post_template"] == 'chan_second':
+            post = Contented.prepare_post_chan_second(project, msg)
         else:
             post = Contented.prepare_post_forward(msg)
 

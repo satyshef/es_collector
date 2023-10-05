@@ -22,11 +22,26 @@ def prepare_post_chan_basic(project, source):
     # FULL POST
     get_post_images(post)
     get_post_videos(post)
-    #get_post_text(project, post)
-    #post['text'] = prepare_markdown(post['text'])
-    #apply_user_patterns(project, post)
     post['text'] = "%s%s \n \n%s%s%s" % (project['before_post'], postLink, project['before_text'], post['text'], project['after_text'])
+    return post
 
+# изображение - текст - имя источника
+def prepare_post_chan_second(project, source):
+    if source["content"] == None:
+        print("None content")
+        return None
+    
+    post = source["content"].copy()
+    author = source["location"]["first_name"]
+   
+    if post['type'] == 'videonote':
+        post['video_link'] = parser.get_videonote()
+        return post
+    
+    # FULL POST
+    get_post_images(post)
+    get_post_videos(post)
+    post['text'] = "%s \n \n%s%s%s\n_%s_" % (project['before_post'], project['before_text'], post['text'], project['after_text'], author)
     return post
 
 
