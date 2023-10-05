@@ -12,9 +12,15 @@ import es_collector.eslibs.es as Elastic
 
 @task.python
 def send_messages(server, project, messages, interval=1):
+    es = Elastic.New(server)
     bot_token = project["bot_token"]
     chat_id = project["chat_id"]
-    es = Elastic.New(server)
+    
+    # Максимальное количество отправки сообщений 
+    if "number_sent" in project:
+        number_sent = project["number_sent"]
+    else:
+        number_sent = project["size"]
 
     if "disable_preview" in project:
         disable_preview = project["disable_preview"]
@@ -25,6 +31,8 @@ def send_messages(server, project, messages, interval=1):
     result = []
     for msg in messages:
         Prolib.save_last_message_time(project, msg)
+        if number_sent <= 0:
+            break
         # Check dublicate
         if Eslib.is_dublicate(es, project, msg) == True:
             continue
@@ -54,6 +62,8 @@ def send_messages(server, project, messages, interval=1):
             post = Contented.prepare_post_chan_basic(project, msg)
         elif project["post_template"] == 'chan_second':
             post = Contented.prepare_post_chan_second(project, msg)
+        elif project["post_template"] == 'chan_clear':
+            post = Contented.prepare_post_chan_clear(project, msg)
         else:
             post = Contented.prepare_post_forward(msg)
 
@@ -85,7 +95,9 @@ def send_messages(server, project, messages, interval=1):
                 response = bot.send_media_post(cid, post)
             Eslib.save_doc(es, project["project_index"], msg)
             time.sleep(interval)
-
+        
+        # сделать проверку успешности  отправки и уменьшать счетчик только в этом случае
+        number_sent -= 1
         
         result.append(msg)
             

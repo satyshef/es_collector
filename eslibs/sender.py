@@ -62,7 +62,7 @@ class TelegramWorker:
            else:
                # Сообщение изначально без текста и оно либо удалено либо большой размер файла(невозможно загрузить медиа через веб) 
                print('Media dont send. Empty content')
-               return
+               return None
                #raise ValueError('Media dont send. Empty content')
            
         if len(text) > 1024:

@@ -13,35 +13,69 @@ def prepare_post_chan_basic(project, source):
         return None
     
     post = source["content"].copy()
-    postLink = "[%s](%s)" % (source["location"]["first_name"], source["content"]["link"])
-   
+    
     if post['type'] == 'videonote':
         post['video_link'] = parser.get_videonote()
         return post
     
-    # FULL POST
+    author = "[%s](%s)" % (source["location"]["first_name"], source["content"]["link"])
+
     get_post_images(post)
     get_post_videos(post)
-    post['text'] = "%s%s \n \n%s%s%s" % (project['before_post'], postLink, project['before_text'], post['text'], project['after_text'])
+    post['text'] = "%s%s\n\n%s%s%s" % (
+        project['before_post'], 
+        author, 
+        project['before_text'], 
+        post['text'], 
+        get_after_text(project))
     return post
 
-# изображение - текст - имя источника
+# изображение - текст - имя отправителя
 def prepare_post_chan_second(project, source):
     if source["content"] == None:
         print("None content")
         return None
     
     post = source["content"].copy()
-    author = source["location"]["first_name"]
-   
     if post['type'] == 'videonote':
         post['video_link'] = parser.get_videonote()
         return post
     
-    # FULL POST
+    #author = "_" + source["location"]["first_name"] + "_"
+    author = "[%s](%s)" % (source["location"]["first_name"], source["content"]["link"])
+    
     get_post_images(post)
     get_post_videos(post)
-    post['text'] = "%s \n \n%s%s%s\n_%s_" % (project['before_post'], project['before_text'], post['text'], project['after_text'], author)
+    post['text'] = "%s\n\n%s%s%s%s" % (
+        project['before_post'], 
+        project['before_text'], 
+        post['text'], 
+        get_after_text(project), 
+        author)
+    
+    return post
+
+
+# изображение - текст
+def prepare_post_chan_clear(project, source):
+    if source["content"] == None:
+        print("None content")
+        return None
+    
+    post = source["content"].copy()
+    if post['type'] == 'videonote':
+        post['video_link'] = parser.get_videonote()
+        return post
+    
+    get_post_images(post)
+    get_post_videos(post)
+    post['text'] = "%s\n\n%s%s%s" % (
+        project['before_post'], 
+        project['before_text'], 
+        post['text'], 
+        get_after_text(project)
+        )
+    
     return post
 
 
@@ -62,6 +96,10 @@ def prepare_post_forward(source):
     return post
 
 #=====================================================================================  
+def get_after_text(project):
+    if "after_text" in project:
+        return project['after_text']
+    return "\n\n"
 
 def generate_link(destination):
         if destination["type"] == "user":
