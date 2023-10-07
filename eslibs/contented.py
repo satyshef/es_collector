@@ -43,7 +43,7 @@ def prepare_post_chan_basic2(project, source):
         post['video_link'] = parser.get_videonote()
         return post
 
-    author = "%s" % (source["location"]["first_name"])
+    author = "*%s*" % (source["location"]["first_name"])
 
     get_post_images(post)
     get_post_videos(post)
