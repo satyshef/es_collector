@@ -6,7 +6,7 @@ import es_collector.eslibs.webparser as webparser
 import es_collector.eslibs.parser as parser
 
 #====================================== Шаблоны ======================================    
-# изображение - ссылка на пост -- текст
+# изображение - ссылка на пост - текст
 def prepare_post_chan_basic(project, source):
     if source["content"] == None:
         print("None content")
@@ -29,6 +29,33 @@ def prepare_post_chan_basic(project, source):
         post['text'], 
         get_after_text(project))
     return post
+
+
+# изображение - название чата  - текст
+def prepare_post_chan_basic2(project, source):
+    if source["content"] == None:
+        print("None content")
+        return None
+
+    post = source["content"].copy()
+
+    if post['type'] == 'videonote':
+        post['video_link'] = parser.get_videonote()
+        return post
+
+    author = "%s" % (source["location"]["first_name"])
+
+    get_post_images(post)
+    get_post_videos(post)
+    post['text'] = "%s%s\n\n%s%s%s" % (
+        project['before_post'],
+        author,
+        project['before_text'],
+        post['text'],
+        get_after_text(project))
+    return post
+
+
 
 # изображение - текст - имя отправителя
 def prepare_post_chan_second(project, source):
