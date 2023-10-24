@@ -58,6 +58,8 @@ def send_messages(server, project, messages, interval=1):
             post = Contented.prepare_demo1_post(msg)
         elif project["post_template"] == 'forward_media':
             post = Contented.prepare_forward_media(msg)
+        elif project["post_template"] == 'text_basic':
+            post = Contented.prepare_text_template1(project, msg)
         elif project["post_template"] == 'chan_basic':
             post = Contented.prepare_post_chan_basic(project, msg)
         elif project["post_template"] == 'chan_basic2':

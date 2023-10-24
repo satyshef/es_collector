@@ -6,6 +6,39 @@ import es_collector.eslibs.webparser as webparser
 import es_collector.eslibs.parser as parser
 
 #====================================== Шаблоны ======================================    
+# название чата(ссылка на сообщение) - имя отправителя - текст сообщения
+def prepare_text_template1(project, source):
+    if source["content"] == None:
+        print("None content")
+        return None
+
+    post = source["content"].copy()
+
+    if post['type'] == 'videonote':
+        return None
+
+    chatName = source["location"]["first_name"]
+    chatName = re.sub(r'\[|\]', '', chatName)
+    postLink = "[%s](%s)" % (chatName, source["content"]["link"])
+
+    if source['sender']['id'] != source["location"]['id']:
+        senderLink = generate_link(source["sender"])
+        senderName = source["sender"]["first_name"]+" "+source["sender"]["last_name"] 
+        senderName = re.sub(r'\[|\]', '', senderName)
+        senderLink = f"[%s](%s)" % (senderName, senderLink)
+    else:
+        senderLink = ""
+
+    post['text'] = "%s%s\n%s\n%s%s%s" % (
+        project['before_post'],
+        postLink,
+        senderLink,
+        project['before_text'],
+        post['text'],
+        get_after_text(project))
+    return post
+
+
 # изображение - ссылка на пост - текст
 def prepare_post_chan_basic(project, source):
     if source["content"] == None:
