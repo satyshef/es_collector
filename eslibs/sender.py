@@ -39,7 +39,10 @@ class TelegramWorker:
         media = []
         for link in post['foto_link']:
             if is_remote_addr(link):
-                image_file = link
+                response = requests.get(link)
+                if response.status_code != 200:
+                    continue
+                image_file = response.content
             else:
                 image_file = open(link, 'rb')
             img = telebot.types.InputMediaPhoto(image_file)
@@ -47,7 +50,10 @@ class TelegramWorker:
 
         for link in post['video_link']:
             if is_remote_addr(link):
-                video_file = link
+                response = requests.get(link)
+                if response.status_code != 200:
+                    continue
+                video_file = response.content
             else:
                 video_file = open(link, 'rb')
             vid = telebot.types.InputMediaVideo(video_file)
@@ -67,7 +73,7 @@ class TelegramWorker:
            
         if len(text) > 1024:
             #Если длинный текст отправляем медиа отдельно от текстста
-            media[0].caption = "%s" % (post["link"])
+            #media[0].caption = "%s" % (post["link"])
             self.bot.send_media_group(chat_id, media)
             self.send_text(chat_id, text)
 
