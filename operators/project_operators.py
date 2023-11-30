@@ -22,22 +22,27 @@ def check_actual(project):
     end = start + interval
     # Проверяем суточный остаток
     if start <= end_date and end > end_date:
-        info = 'ℹ #info\n\nРабота парсера прекратится через %s\n\nДля продления услуги свяжитесь с @vagerman' % first_term
-        for cid in project['chat_id']:
-            response = bot.send_text(cid, info)
-            print(response)
+        if "send_notification" not in project or project['send_notification'] == True:
+            info = 'ℹ #info\n\nРабота парсера прекратится через %s\n\nДля продления услуги свяжитесь с @vagerman' % first_term
+            sendNotification(bot, project, info)
         raise AirflowSkipException
-
     # Проверяем окончание веремени
     if current_date <= end_date and (current_date+interval) > end_date:
-        info = 'ℹ #info\n\nРабота парсера прекращена\n\nДля продления услуги свяжитесь с @vagerman'
-        for cid in project['chat_id']:
-            response = bot.send_text(cid, info)
-            print(response)
+        if "send_notification" not in project or project['send_notification'] == True:
+            info = 'ℹ #info\n\nРабота парсера прекращена\n\nДля продления услуги свяжитесь с @vagerman'
+            sendNotification(bot, project, info)
         raise AirflowSkipException
-    
     return True
 
+
+def sendNotification(bot, project, msg):
+    if "notification_chat_id" in project:
+        chats = project['notification_chat_id']
+    else:
+        chats = project['chat_id']
+    for cid in chats:
+        response = bot.send_text(cid, msg)
+        print(response)
 
 
 # Загружаем поисковый запрос пользователя
