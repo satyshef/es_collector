@@ -20,7 +20,7 @@ def run_dag(dag, project):
         return
     if project["succession"] == "dubler":
         succession_dubler(dag, project)
-    if project["succession"] == "save2file":
+    elif project["succession"] == "save2file":
         succession_save2file(dag, project)
     else:
         succession_default(dag, project)
