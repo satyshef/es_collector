@@ -10,6 +10,7 @@ import es_collector.eslibs.contented as Contented
 import es_collector.eslibs.es as Eslib
 import es_collector.eslibs.es as Elastic
 
+# Отправка сообщения в Телеграм
 @task.python
 def send_messages(server, project, messages, interval=1):
     es = Elastic.New(server)
@@ -127,6 +128,7 @@ def dublicates_checker(server, project, messages):
     return result
 
 
+# dont used
 def prepare_messages(server, project, messages):
     es = Elastic.New(server)
     result = []
