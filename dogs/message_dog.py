@@ -69,10 +69,11 @@ def prepare_short_text(server, project, messages):
 
     result = [] 
     for msg in messages:
-        #print(msg['content'])
-        if ('content' not in msg) or ('type' not in msg['content']) or msg['content']['type'] != 'text':
-            print('NOT TEXT')
-            continue
+        #print(msg['content']['text'])
+        #continue
+        #if ('content' not in msg) or ('type' not in msg['content']) or msg['content']['type'] != 'text':
+        #    print('NOT TEXT')
+        #    continue
 
         msg['content']['text'] = msg['content']['text'].strip() 
         if msg['content']['text'] == '':
