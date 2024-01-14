@@ -1,4 +1,6 @@
 # Скрипт сбора сообщений
+import random
+
 from airflow import DAG
 from airflow.hooks.base_hook import BaseHook
 from airflow.decorators import task
@@ -46,11 +48,11 @@ def succession_save2file(dag, project):
         check = Project.check_actual(project)
         filter = Project.get_filter(server, project, check)
         messages_all = Project.get_messages(server, project, filter)
-        messages = prepare_short_text(server, project, messages_all)
+        messages = prepare_short_text(project, messages_all)
         save_messages_to_file(project['content']['file_name'], messages)
 
 @task.python
-def prepare_short_text(server, project, messages):
+def prepare_short_text(project, messages):
         
     if ('content' not in project) or ('max_text_len' not in project['content']):
         print('Nont set required parametr max_text_len')
@@ -67,10 +69,10 @@ def prepare_short_text(server, project, messages):
     else:
         lines_count = 7
 
-    result = [] 
+    result = []
     for msg in messages:
         #print(msg['content']['text'])
-        #continue
+        # Only text messages
         #if ('content' not in msg) or ('type' not in msg['content']) or msg['content']['type'] != 'text':
         #    print('NOT TEXT')
         #    continue
@@ -88,6 +90,11 @@ def prepare_short_text(server, project, messages):
             # если достигли нужного количества сообщений, сохраняем позицию последнего на elastic и прерываемся 
             if len(result) >= lines_count:
                 Prolib.save_last_message_time(project, msg)
+                if ('random' in project['content']) and (project['content']['random'] == True):
+                    random.shuffle(result)
+                if ('before_text' in project['content']) and (project['content']['before_text'] != ""):
+                    result.insert(0, project['content']['before_text'])
+                    #result.append(project['content']['before_text'])
                 return result
 
     return None

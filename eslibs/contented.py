@@ -241,9 +241,9 @@ def handle_post_text(project, msg):
     # проверяем количество ссылок в тексте
     if 'max_links' in project and project['max_links'] >= 0:
         links = parser.extract_links(msg["content"]["text"])
-        print("LINKS : ", len(links))
+        #print("LINKS : ", len(links))
         if len(links) > project['max_links']:
-            print("MAX LINKS")
+            #print("MAX LINKS")
             return False
    
     
