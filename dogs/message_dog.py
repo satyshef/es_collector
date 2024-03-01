@@ -1,5 +1,6 @@
 # Скрипт сбора сообщений
 import random
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.hooks.base_hook import BaseHook
@@ -16,6 +17,7 @@ import es_collector.eslibs.contented as Contented
 
 
 server = BaseHook.get_connection('elasticsearch_host2')
+TIMEZONE = 3
 
 def run_dag(dag, project):
     if dag == None or project == None:
@@ -108,6 +110,7 @@ def save_messages_to_file(file_name, messages):
         print("Messages is None")
         raise AirflowSkipException
 
+    file_name = generate_filename(file_name, 'txt')
     with open(file_name, 'w') as file:
         for item in messages:
             file.write(item + '\n')
@@ -156,5 +159,19 @@ def clear_text(text):
     clean_text = clean_text.replace('__', '')
     return clean_text
 
-            
+# переместить в какую нибудь общую библиотеку            
+def get_current_time(timezone):
+    
+    utc_now = datetime.utcnow()
 
+    # Создайте объект timedelta для задания разницы в часах
+    target_offset = timedelta(hours=timezone)
+
+    # Примените разницу к текущей дате и времени
+    current_datetime = utc_now + target_offset
+    return current_datetime
+
+def generate_filename(base, ext):
+    current_datetime = get_current_time(TIMEZONE)
+    result = base + '.' + current_datetime.strftime("%y%m%d%H%M%S") + "." + ext
+    return result
