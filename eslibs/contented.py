@@ -233,9 +233,12 @@ def handle_post_text(project, msg):
         wp = webparser.TelegramParser(msg['content']['link'])
         msg['content']['text'] = wp.get_text()
         if msg['content']['text'] == '':
-             if msg['content']['type'] == 'text':
-                 return False
-             return True
+            # Тестовый вариант
+            return False
+            # Рабочий вариант
+            #if msg['content']['type'] == 'text':
+            #    return False
+            #return True
     
 
     # проверяем количество ссылок в тексте

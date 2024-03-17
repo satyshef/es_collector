@@ -81,20 +81,21 @@ def send_messages(server, project, messages, interval=1):
         print("POST", post)
         text = ''
         if post['type']=='text':
-            if 'text' in post:
-                text = post['text']
-            else:
+            if 'text' not in post or post['text'] == '':
                 print('Text in text post not set')
                 continue
+            text = post['text']
+            
+
         
 
-        for cid in chat_id:              
-            if post['type']=='videonote':
+        for cid in chat_id:
+            if text !='':
+                print("SEND TEXT", text, " TO CHAT ", cid)
+                response = bot.send_text(cid, text, disable_preview)             
+            elif post['type']=='videonote':
                 print("SEND VIDEONOTE", post)
                 response = bot.send_videonote(cid, post)
-            elif text !='':
-                print("SEND TEXT", text, " TO CHAT ", cid)
-                response = bot.send_text(cid, text, disable_preview)
             else:
                 print("SEND MEDIA", post)
                 response = bot.send_media_post(cid, post)
