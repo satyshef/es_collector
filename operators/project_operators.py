@@ -23,13 +23,19 @@ def check_actual(project):
     # Проверяем суточный остаток
     if start <= end_date and end > end_date:
         if "send_notification" not in project or project['send_notification'] == True:
-            info = 'ℹ #info\n\nРабота парсера прекратится через %s\n\nДля продления услуги свяжитесь с @vagerman' % first_term
+            if "notification1" not in project or project['notification1'] == "":
+                info = 'ℹ #info\n\nРабота парсера прекратится через %s\n\nДля продления услуги свяжитесь с @vagerman' % first_term
+            else:
+                info = project['notification1']
             sendNotification(bot, project, info)
         raise AirflowSkipException
     # Проверяем окончание веремени
     if current_date <= end_date and (current_date+interval) > end_date:
         if "send_notification" not in project or project['send_notification'] == True:
-            info = 'ℹ #info\n\nРабота парсера прекращена\n\nДля продления услуги свяжитесь с @vagerman'
+            if "notification2" not in project or project['notification2'] == "":
+                info = 'ℹ #info\n\nРабота парсера прекращена\n\nДля продления услуги свяжитесь с @vagerman'
+            else:
+                info = project['notification2']
             sendNotification(bot, project, info)
         raise AirflowSkipException
     return True
